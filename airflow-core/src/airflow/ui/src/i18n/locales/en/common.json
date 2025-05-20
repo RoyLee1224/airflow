@@ -42,5 +42,6 @@
     "documentation": "Documentation",
     "githubRepo": "GitHub Repo",
     "restApiReference": "REST API Reference"
-  }
+  },
+  "noItemsFound": "No {{modelName}} found."
 }

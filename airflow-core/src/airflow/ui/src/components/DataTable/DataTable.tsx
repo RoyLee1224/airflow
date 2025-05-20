@@ -30,6 +30,7 @@ import {
   type Updater,
 } from "@tanstack/react-table";
 import React, { type ReactNode, useCallback, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { CardList } from "src/components/DataTable/CardList";
 import { TableList } from "src/components/DataTable/TableList";
@@ -130,6 +131,7 @@ export const DataTable = <TData,>({
 
   // Default to show columns filter only if there are actually many columns displayed
   const showColumnsFilter = allowFiltering ?? columns.length > 5;
+  const { t: translate } = useTranslation("common");
 
   return (
     <>
@@ -144,7 +146,7 @@ export const DataTable = <TData,>({
       ) : undefined}
       {!hasRows && !Boolean(isLoading) && (
         <Text pl={4} pt={1}>
-          {noRowsMessage ?? `No ${modelName}s found.`}
+          {noRowsMessage ?? translate("noItemsFound", { count: 0, modelName })}
         </Text>
       )}
       {hasPagination ? (

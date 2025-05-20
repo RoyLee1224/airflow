@@ -42,5 +42,6 @@
     "documentation": "文件",
     "githubRepo": "GitHub 倉庫",
     "restApiReference": "REST API 參考"
-  }
+  },
+  "noItemsFound": "未找到{{modelName}}"
 }

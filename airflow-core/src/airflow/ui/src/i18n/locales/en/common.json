@@ -77,6 +77,8 @@
   "taskInstance_other": "Task Instances",
   "assetEvent_one": "Asset Event",
   "assetEvent_other": "Asset Events",
+  "dag_one": "Dag",
+  "dag_other": "Dags",
   "triggered": "Triggered",
   "pools": {
     "open": "Open",
@@ -89,7 +91,26 @@
   },
   "modal": {
     "cancel": "Cancel",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "delete": {
+      "button": "Delete",
+      "confirmation": "Are you sure you want to delete {{resourceName}}? This action cannot be undone."
+    }
+  },
+  "table": {
+    "filterColumns": "Filter table columns",
+    "filterByTag": "Filter Dags by tag",
+    "noTagsFound": "No tags found",
+    "tagPlaceholder": "Filter by tag",
+    "tagMode": {
+      "any": "Any",
+      "all": "All"
+    },
+    "filters": {
+      "reset": "Reset",
+      "filter_one": "filter",
+      "filter_other": "filters"
+    }
   },
   "timezoneModal": {
     "title": "Select Timezone",

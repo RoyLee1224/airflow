@@ -19,6 +19,7 @@
 import { Button, Input, Kbd, type ButtonProps } from "@chakra-ui/react";
 import { useState, useRef, type ChangeEvent } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
+import { useTranslation } from "react-i18next";
 import { FiSearch } from "react-icons/fi";
 import { useDebouncedCallback } from "use-debounce";
 
@@ -51,6 +52,7 @@ export const SearchBar = ({
   const searchRef = useRef<HTMLInputElement>(null);
   const [value, setValue] = useState(defaultValue);
   const metaKey = getMetaKey();
+  const { t: translate } = useTranslation("dags");
 
   const onSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
     setValue(event.target.value);
@@ -84,8 +86,15 @@ export const SearchBar = ({
             />
           ) : undefined}
           {Boolean(hideAdvanced) ? undefined : (
-            <Button fontWeight="normal" height="1.75rem" variant="ghost" width={140} {...buttonProps}>
-              Advanced Search
+            <Button
+              data-testid="advanced-search-button"
+              fontWeight="normal"
+              height="1.75rem"
+              variant="ghost"
+              width={140}
+              {...buttonProps}
+            >
+              {translate("list.advancedSearch")}
             </Button>
           )}
           {!hotkeyDisabled && <Kbd size="sm">{metaKey}+K</Kbd>}

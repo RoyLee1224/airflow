@@ -1,6 +1,7 @@
 {
   "list": {
     "searchPlaceholder": "Search Dags",
+    "advancedSearch": "Advanced Search",
     "columns": {
       "dagId": "Dag ID",
       "schedule": "Schedule",

@@ -30,6 +30,7 @@ import koDashboard from "./locales/ko/dashboard.json";
 import nlCommon from "./locales/nl/common.json";
 import nlDashboard from "./locales/nl/dashboard.json";
 import zhTWCommon from "./locales/zh-TW/common.json";
+// import zhTWDags from "./locales/zh-TW/dags.json";
 import zhTWDashboard from "./locales/zh-TW/dashboard.json";
 
 // TODO: Dynamically load translation files
@@ -66,6 +67,7 @@ const resources = {
   },
   "zh-TW": {
     common: zhTWCommon,
+    // dags: zhTWDags,
     dashboard: zhTWDashboard,
   },
 };

@@ -53,6 +53,8 @@ import { Variables } from "src/pages/Variables";
 import { XCom } from "src/pages/XCom";
 
 import { Configs } from "./pages/Configs";
+import { FolderDags } from "./pages/FolderDags/FolderDags";
+import { Folders } from "./pages/Folders";
 import { GroupTaskInstance } from "./pages/GroupTaskInstance";
 import { Security } from "./pages/Security";
 import { client } from "./queryClient";
@@ -77,6 +79,14 @@ export const routerConfig = [
       {
         element: <DagsList />,
         path: "dags",
+      },
+      {
+        element: <Folders />,
+        path: "folders",
+      },
+      {
+        element: <FolderDags />,
+        path: "folders/:folderId",
       },
       {
         element: (

@@ -27,6 +27,7 @@ export type DagWithLatest = {
 export const useDags = ({
   dagDisplayNamePattern,
   dagIdPattern,
+  dagIds,
   dagRunsLimit,
   excludeStale = true,
   lastDagRunState,
@@ -40,6 +41,7 @@ export const useDags = ({
 }: {
   dagDisplayNamePattern?: string;
   dagIdPattern?: string;
+  dagIds?: Array<string>;
   dagRunsLimit: number;
   excludeStale?: boolean;
   lastDagRunState?: DagRunState;
@@ -57,6 +59,7 @@ export const useDags = ({
     {
       dagDisplayNamePattern,
       dagIdPattern,
+      dagIds,
       dagRunsLimit,
       excludeStale,
       lastDagRunState,

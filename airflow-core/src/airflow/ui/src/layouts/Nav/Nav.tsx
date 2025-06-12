@@ -18,7 +18,7 @@
  */
 import { Box, Flex, VStack } from "@chakra-ui/react";
 import { useTranslation } from "react-i18next";
-import { FiDatabase, FiHome } from "react-icons/fi";
+import { FiDatabase, FiFolder, FiHome } from "react-icons/fi";
 import { NavLink } from "react-router-dom";
 
 import { useAuthLinksServiceGetAuthMenus, useVersionServiceGetVersion } from "openapi/queries";
@@ -65,6 +65,7 @@ export const Nav = () => {
           </NavLink>
         </Box>
         <NavButton icon={<FiHome size="1.75rem" />} title={translate("nav.home")} to="/" />
+        <NavButton icon={<FiFolder size="1.75rem" />} title={translate("nav.folders")} to="folders" />
         <NavButton
           disabled={!authLinks?.authorized_menu_items.includes("Dags")}
           icon={<DagIcon height="1.75rem" width="1.75rem" />}

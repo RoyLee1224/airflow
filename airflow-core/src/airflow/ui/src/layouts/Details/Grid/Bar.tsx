@@ -45,6 +45,7 @@ export const Bar = ({ max, nodes, run }: Props) => {
     <Box
       _hover={{ bg: "blue.subtle" }}
       bg={isSelected ? "blue.muted" : undefined}
+      data-run-id={run.dag_run_id}
       position="relative"
       transition="background-color 0.2s"
     >

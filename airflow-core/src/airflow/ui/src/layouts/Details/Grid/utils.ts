@@ -24,61 +24,69 @@ export type RunWithDuration = {
 
 export type GridTask = {
   depth: number;
+  firstChildIndex?: number;
+  isFirstChildOfParent?: boolean;
   isGroup?: boolean;
   isOpen?: boolean;
   parentId?: string;
-  firstChildIndex?: number;
-  isFirstChildOfParent?: boolean;
 } & NodeResponse;
 
 export const flattenNodes = (nodes: Array<NodeResponse>, openGroupIds: Array<string>, depth: number = 0) => {
-  let flatNodes: Array<GridTask> = [];
-  let allGroupIds: Array<string> = [];
+  const flatNodes: Array<GridTask> = [];
+  const allGroupIds: Array<string> = [];
 
   const processNode = (node: NodeResponse, currentDepth: number, parentId?: string) => {
-    if (node.type === "task") {
-      if (node.children) {
-        // This is a group
-        const isOpen = openGroupIds.includes(node.id);
-        const groupIndex = flatNodes.length;
-        
-        flatNodes.push({ 
-          ...node, 
-          depth: currentDepth, 
-          isGroup: true, 
-          isOpen,
-          parentId,
-        });
-        allGroupIds.push(node.id);
-
-        if (isOpen && node.children.length > 0) {
-          const firstChildWillBeAtIndex = flatNodes.length;
-          
-          // Process all children
-          node.children.forEach((child, index) => {
-            processNode(child, currentDepth + 1, node.id);
-          });
-          
-          // Now update the group's firstChildIndex if it has children
-          if (flatNodes.length > firstChildWillBeAtIndex) {
-            if (flatNodes[groupIndex]) {
-              flatNodes[groupIndex].firstChildIndex = firstChildWillBeAtIndex;
-            }
-            // Mark the first child
-            if (flatNodes[firstChildWillBeAtIndex]) {
-              flatNodes[firstChildWillBeAtIndex].isFirstChildOfParent = true;
-            }
-          }
-        }
-      } else {
-        // This is a regular task
-        flatNodes.push({ 
-          ...node, 
-          depth: currentDepth,
-          parentId,
-        });
-      }
+    if (node.type !== "task") {
+      return;
     }
+
+    // Process group nodes
+    if (node.children) {
+      const isOpen = openGroupIds.includes(node.id);
+      const groupIndex = flatNodes.length;
+      
+      flatNodes.push({ 
+        ...node, 
+        depth: currentDepth, 
+        isGroup: true, 
+        isOpen,
+        parentId,
+      });
+      allGroupIds.push(node.id);
+
+      if (!isOpen || node.children.length === 0) {
+        return;
+      }
+
+      const firstChildWillBeAtIndex = flatNodes.length;
+      
+      // Process all children
+      node.children.forEach((child) => {
+        processNode(child, currentDepth + 1, node.id);
+      });
+      
+      // Update group's firstChildIndex and mark first child
+      if (flatNodes.length > firstChildWillBeAtIndex) {
+        const groupNode = flatNodes[groupIndex];
+        const firstChild = flatNodes[firstChildWillBeAtIndex];
+        
+        if (groupNode) {
+          groupNode.firstChildIndex = firstChildWillBeAtIndex;
+        }
+        if (firstChild) {
+          firstChild.isFirstChildOfParent = true;
+        }
+      }
+      
+      return;
+    }
+
+    // Process regular task nodes
+    flatNodes.push({ 
+      ...node, 
+      depth: currentDepth,
+      parentId,
+    });
   };
 
   nodes.forEach(node => processNode(node, depth));

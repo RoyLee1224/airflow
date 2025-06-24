@@ -76,15 +76,14 @@ export const Grid = ({ limit }: Props) => {
     [gridData, openGroupIds],
   );
 
-  useGridNavigation({
+  const { isInPreviewMode, navigationState } = useGridNavigation({
     flatNodes,
     isGridFocused,
-    openGroupIds,
     runs,
   });
 
   useEffect(() => {
-    if (gridRef.current && Boolean(runs.length) && Boolean(flatNodes.length)) {
+    if (gridRef.current && runs.length > 0 && flatNodes.length > 0) {
       gridRef.current.focus();
       setIsGridFocused(true);
     }
@@ -127,7 +126,7 @@ export const Grid = ({ limit }: Props) => {
       tabIndex={0}
       width="100%"
     >
-      {Boolean(isGridFocused) && (
+      {isGridFocused ? (
         <Box
           borderRadius="md"
           color="gray.400"
@@ -140,8 +139,16 @@ export const Grid = ({ limit }: Props) => {
         >
           <Text>{translate("navigation.navigation", { arrow: "↑↓←→" })}</Text>
           <Text>{translate("navigation.jump", { arrow: "↑↓←→", metaKey })}</Text>
+          {isInPreviewMode ? (
+            <Text color="blue.400" fontWeight="bold">
+              {navigationState === 'continuous' 
+                ? "🔄 Continuous Preview - Release to navigate"
+                : "⏳ Preview Mode - Hold to continue"
+              }
+            </Text>
+          ) : null}
         </Box>
-      )}
+      ) : null}
       <Box flexGrow={1} minWidth={7} position="relative" top="100px">
         <TaskNames nodes={flatNodes} />
       </Box>
@@ -151,13 +158,13 @@ export const Grid = ({ limit }: Props) => {
           <DurationAxis top="50px" />
           <DurationAxis top="4px" />
           <Flex flexDirection="column-reverse" height="100px" position="relative" width="100%">
-            {Boolean(runs.length) && (
+            {runs.length > 0 ? (
               <>
                 <DurationTick bottom="92px" duration={max} />
                 <DurationTick bottom="46px" duration={max / 2} />
                 <DurationTick bottom="-4px" duration={0} />
               </>
-            )}
+            ) : null}
           </Flex>
           <Flex flexDirection="row-reverse">
             {runs.map((dr) => (

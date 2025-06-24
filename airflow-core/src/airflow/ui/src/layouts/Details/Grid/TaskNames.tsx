@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { Box, chakra, Flex, Link } from "@chakra-ui/react";
+import { Box, chakra, Flex } from "@chakra-ui/react";
 import type { MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { FiChevronUp } from "react-icons/fi";
@@ -68,25 +68,25 @@ export const TaskNames = ({ nodes }: Props) => {
     >
       {node.isGroup ? (
         <Flex alignItems="center">
-          <Link data-testid={node.id} display="inline">
-            <RouterLink
-              replace
-              to={{
-                pathname: `/dags/${dagId}/tasks/group/${node.id}`,
-                search: searchParams.toString(),
-              }}
-            >
-              <TaskName
-                fontSize="sm"
-                fontWeight="normal"
-                isGroup={true}
-                isMapped={Boolean(node.is_mapped)}
-                label={node.label}
-                paddingLeft={node.depth * 3 + 2}
-                setupTeardownType={node.setup_teardown_type}
-              />
-            </RouterLink>
-          </Link>
+          <RouterLink
+            data-testid={node.id}
+            replace
+            style={{ display: "inline" }}
+            to={{
+              pathname: `/dags/${dagId}/tasks/group/${node.id}`,
+              search: searchParams.toString(),
+            }}
+          >
+            <TaskName
+              fontSize="sm"
+              fontWeight="normal"
+              isGroup={true}
+              isMapped={Boolean(node.is_mapped)}
+              label={node.label}
+              paddingLeft={node.depth * 3 + 2}
+              setupTeardownType={node.setup_teardown_type}
+            />
+          </RouterLink>
           <chakra.button
             aria-label={translate("grid.buttons.toggleGroup")}
             display="inline"
@@ -106,24 +106,24 @@ export const TaskNames = ({ nodes }: Props) => {
           </chakra.button>
         </Flex>
       ) : (
-        <Link asChild data-testid={node.id} display="inline">
-          <RouterLink
-            replace
-            to={{
-              pathname: `/dags/${dagId}/tasks/${node.id}`,
-              search: searchParams.toString(),
-            }}
-          >
-            <TaskName
-              fontSize="sm"
-              fontWeight="normal"
-              isMapped={Boolean(node.is_mapped)}
-              label={node.label}
-              paddingLeft={node.depth * 3 + 2}
-              setupTeardownType={node.setup_teardown_type}
-            />
-          </RouterLink>
-        </Link>
+        <RouterLink
+          data-testid={node.id}
+          replace
+          style={{ display: "inline" }}
+          to={{
+            pathname: `/dags/${dagId}/tasks/${node.id}`,
+            search: searchParams.toString(),
+          }}
+        >
+          <TaskName
+            fontSize="sm"
+            fontWeight="normal"
+            isMapped={Boolean(node.is_mapped)}
+            label={node.label}
+            paddingLeft={node.depth * 3 + 2}
+            setupTeardownType={node.setup_teardown_type}
+          />
+        </RouterLink>
       )}
     </Box>
   ));

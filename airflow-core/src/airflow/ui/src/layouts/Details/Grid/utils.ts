@@ -26,33 +26,62 @@ export type GridTask = {
   depth: number;
   isGroup?: boolean;
   isOpen?: boolean;
+  parentId?: string;
+  firstChildIndex?: number;
+  isFirstChildOfParent?: boolean;
 } & NodeResponse;
 
 export const flattenNodes = (nodes: Array<NodeResponse>, openGroupIds: Array<string>, depth: number = 0) => {
   let flatNodes: Array<GridTask> = [];
   let allGroupIds: Array<string> = [];
 
-  nodes.forEach((node) => {
+  const processNode = (node: NodeResponse, currentDepth: number, parentId?: string) => {
     if (node.type === "task") {
       if (node.children) {
-        const { children, ...rest } = node;
-
-        flatNodes.push({ ...rest, depth, isGroup: true, isOpen: openGroupIds.includes(node.id) });
+        // This is a group
+        const isOpen = openGroupIds.includes(node.id);
+        const groupIndex = flatNodes.length;
+        
+        flatNodes.push({ 
+          ...node, 
+          depth: currentDepth, 
+          isGroup: true, 
+          isOpen,
+          parentId,
+        });
         allGroupIds.push(node.id);
 
-        const { allGroupIds: childGroupIds, flatNodes: childNodes } = flattenNodes(
-          children,
-          openGroupIds,
-          depth + 1,
-        );
-
-        flatNodes = [...flatNodes, ...(openGroupIds.includes(node.id) ? childNodes : [])];
-        allGroupIds = [...allGroupIds, ...childGroupIds];
+        if (isOpen && node.children.length > 0) {
+          const firstChildWillBeAtIndex = flatNodes.length;
+          
+          // Process all children
+          node.children.forEach((child, index) => {
+            processNode(child, currentDepth + 1, node.id);
+          });
+          
+          // Now update the group's firstChildIndex if it has children
+          if (flatNodes.length > firstChildWillBeAtIndex) {
+            if (flatNodes[groupIndex]) {
+              flatNodes[groupIndex].firstChildIndex = firstChildWillBeAtIndex;
+            }
+            // Mark the first child
+            if (flatNodes[firstChildWillBeAtIndex]) {
+              flatNodes[firstChildWillBeAtIndex].isFirstChildOfParent = true;
+            }
+          }
+        }
       } else {
-        flatNodes.push({ ...node, depth });
+        // This is a regular task
+        flatNodes.push({ 
+          ...node, 
+          depth: currentDepth,
+          parentId,
+        });
       }
     }
-  });
+  };
+
+  nodes.forEach(node => processNode(node, depth));
 
   return { allGroupIds, flatNodes };
 };

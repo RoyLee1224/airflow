@@ -79,6 +79,7 @@ export const Grid = ({ limit }: Props) => {
   useGridNavigation({
     flatNodes,
     isGridFocused,
+    openGroupIds,
     runs,
   });
 

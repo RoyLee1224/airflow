@@ -30,22 +30,24 @@ type ArrowKey = (typeof ARROW_KEYS)[number];
 type UseGridNavigationProps = {
   flatNodes: Array<GridTask>;
   isGridFocused: boolean;
+  openGroupIds: Array<string>;
   runs: Array<RunWithDuration>;
 };
 
-export const useGridNavigation = ({ flatNodes, isGridFocused, runs }: UseGridNavigationProps) => {
+export const useGridNavigation = ({ flatNodes, isGridFocused, openGroupIds, runs }: UseGridNavigationProps) => {
   const navigate = useNavigate();
-  const { dagId = "", runId = "", taskId = "" } = useParams();
+  const { dagId = "", groupId = "", runId = "", taskId = "" } = useParams();
 
   const getCurrentIndices = useCallback(() => {
     const currentRunIndex = runs.findIndex((run) => run.dag_run_id === runId);
-    const currentTaskIndex = flatNodes.findIndex((node) => node.id === taskId);
+    const currentTaskId = groupId || taskId;
+    const currentTaskIndex = flatNodes.findIndex((node) => node.id === currentTaskId);
 
     return {
       runIndex: Math.max(0, currentRunIndex),
       taskIndex: Math.max(0, currentTaskIndex),
     };
-  }, [runs, flatNodes, runId, taskId]);
+  }, [runs, flatNodes, runId, taskId, groupId]);
 
   const navigateToPosition = useCallback(
     (runIndex: number, taskIndex: number) => {
@@ -81,18 +83,42 @@ export const useGridNavigation = ({ flatNodes, isGridFocused, runs }: UseGridNav
     [navigate, dagId, runs, flatNodes],
   );
 
+  const getNextTaskIndex = useCallback(
+    (currentIndex: number, direction: -1 | 1, isQuickJump: boolean) => {
+      const maxTaskIndex = flatNodes.length - 1;
+
+      if (isQuickJump) {
+        return direction > 0 ? maxTaskIndex : 0;
+      }
+
+      const currentTask = flatNodes[currentIndex];
+      if (!currentTask) {
+        return Math.max(0, Math.min(maxTaskIndex, currentIndex + direction));
+      }
+
+      // Moving DOWN: check if we should enter an expanded group
+      if (direction === 1 && currentTask.isGroup && currentTask.firstChildIndex !== undefined) {
+        return currentTask.firstChildIndex;
+      }
+
+      // Moving UP: check if we should return to parent group
+      if (direction === -1 && taskId && !groupId && currentTask.isFirstChildOfParent && currentTask.parentId) {
+        const parentIndex = flatNodes.findIndex(node => node.id === currentTask.parentId);
+        if (parentIndex !== -1) {
+          return parentIndex;
+        }
+      }
+
+      // Default navigation: move to next/previous task
+      return Math.max(0, Math.min(maxTaskIndex, currentIndex + direction));
+    },
+    [flatNodes, groupId, taskId],
+  );
+
   const handleKeyNavigation = useCallback(
     (key: ArrowKey, isQuickJump: boolean) => {
       const { runIndex, taskIndex } = getCurrentIndices();
-      const maxTaskIndex = flatNodes.length - 1;
       const maxRunIndex = runs.length - 1;
-
-      const getTaskIndex = (direction: -1 | 1) =>
-        isQuickJump
-          ? direction > 0
-            ? maxTaskIndex
-            : 0
-          : Math.max(0, Math.min(maxTaskIndex, taskIndex + direction));
 
       const getRunIndex = (direction: -1 | 1) =>
         isQuickJump
@@ -102,17 +128,17 @@ export const useGridNavigation = ({ flatNodes, isGridFocused, runs }: UseGridNav
           : Math.max(0, Math.min(maxRunIndex, runIndex + direction));
 
       const navigationConfig = {
-        ArrowDown: [runIndex, getTaskIndex(1)],
+        ArrowDown: [runIndex, getNextTaskIndex(taskIndex, 1, isQuickJump)],
         ArrowLeft: [getRunIndex(1), taskIndex],
         ArrowRight: [getRunIndex(-1), taskIndex],
-        ArrowUp: [runIndex, getTaskIndex(-1)],
+        ArrowUp: [runIndex, getNextTaskIndex(taskIndex, -1, isQuickJump)],
       } as const;
 
       const [newRunIndex, newTaskIndex] = navigationConfig[key];
 
       navigateToPosition(newRunIndex, newTaskIndex);
     },
-    [getCurrentIndices, navigateToPosition, flatNodes.length, runs.length],
+    [getCurrentIndices, navigateToPosition, runs.length, getNextTaskIndex],
   );
 
   const hotkeys = ARROW_KEYS.flatMap((key) => [key, `mod+${key}`]);

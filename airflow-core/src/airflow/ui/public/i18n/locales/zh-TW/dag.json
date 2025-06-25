@@ -26,6 +26,11 @@
     "noTryNumber": "沒有嘗試次數",
     "viewInExternal": "在 {{name}} 中檢視日誌(嘗試 {{attempt}})"
   },
+  "navigation": {
+    "jump": "跳轉: {{metaKey}}+{{arrow}}",
+    "longPress": "快速導航: 按住{{arrow}}",
+    "navigation": "導航: {{arrow}}"
+  },
   "overview": {
     "buttons": {
       "failedRun_one": "失敗的執行",

@@ -28,6 +28,7 @@
   },
   "navigation": {
     "jump": "Jump: {{metaKey}}+{{arrow}}",
+    "longPress": "Quick navigation: Hold {{arrow}}",
     "navigation": "Navigation: {{arrow}}"
   },
   "overview": {

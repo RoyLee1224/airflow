@@ -76,7 +76,7 @@ export const Grid = ({ limit }: Props) => {
     [gridData, openGroupIds],
   );
 
-  const { isInPreviewMode, navigationState } = useGridNavigation({
+  useGridNavigation({
     flatNodes,
     isGridFocused,
     runs,
@@ -138,17 +138,10 @@ export const Grid = ({ limit }: Props) => {
           zIndex={10}
         >
           <Text>{translate("navigation.navigation", { arrow: "↑↓←→" })}</Text>
+          <Text>{translate("navigation.longPress", { arrow: "↑↓←→" })}</Text>
           <Text>{translate("navigation.jump", { arrow: "↑↓←→", metaKey })}</Text>
-          {isInPreviewMode ? (
-            <Text color="blue.400" fontWeight="bold">
-              {navigationState === 'continuous' 
-                ? "🔄 Continuous Preview - Release to navigate"
-                : "⏳ Preview Mode - Hold to continue"
-              }
-            </Text>
-          ) : null}
         </Box>
-      ) : null}
+      ) : undefined}
       <Box flexGrow={1} minWidth={7} position="relative" top="100px">
         <TaskNames nodes={flatNodes} />
       </Box>
@@ -164,7 +157,7 @@ export const Grid = ({ limit }: Props) => {
                 <DurationTick bottom="46px" duration={max / 2} />
                 <DurationTick bottom="-4px" duration={0} />
               </>
-            ) : null}
+            ) : undefined}
           </Flex>
           <Flex flexDirection="row-reverse">
             {runs.map((dr) => (

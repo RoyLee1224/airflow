@@ -40,7 +40,6 @@ export const flattenNodes = (nodes: Array<NodeResponse>, openGroupIds: Array<str
       return;
     }
 
-    // Process group nodes
     if (node.children) {
       const isOpen = openGroupIds.includes(node.id);
       const groupIndex = flatNodes.length;

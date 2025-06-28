@@ -20,7 +20,7 @@ import { useContext } from "react";
 
 import { NavigationPreviewContext } from "./Context";
 
-export { NavigationPreviewProvider } from "./Provider";
+export { NavigationPreviewProvider } from "./navigationPreviewProvider";
 
 export const useNavigationPreview = () => {
   const context = useContext(NavigationPreviewContext);

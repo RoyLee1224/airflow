@@ -20,10 +20,6 @@ import { useCallback, useState } from "react";
 
 export type NavigationState = 'continuous' | 'idle' | 'previewing';
 
-/**
- * 專門管理導航狀態的 hook
- * 將狀態邏輯從主 hook 中分離出來，提高可維護性
- */
 export const useNavigationState = () => {
   const [isInPreviewMode, setIsInPreviewMode] = useState(false);
   const [navigationState, setNavigationState] = useState<NavigationState>('idle');
@@ -45,9 +41,9 @@ export const useNavigationState = () => {
   return {
     isInPreviewMode,
     navigationState,
-    setNavigationState,
     resetNavigationState,
-    startPreviewMode,
+    setNavigationState,
     startContinuousMode,
+    startPreviewMode,
   };
 }; 

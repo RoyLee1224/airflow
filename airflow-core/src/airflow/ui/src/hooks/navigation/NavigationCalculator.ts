@@ -19,98 +19,47 @@
 import type { GridTask, RunWithDuration } from "src/layouts/Details/Grid/utils";
 import type { NavigationIndices } from "../useGridNavigation";
 
-export type ArrowKey = "ArrowDown" | "ArrowUp" | "ArrowLeft" | "ArrowRight";
+export type ArrowKey = "ArrowDown" | "ArrowLeft" | "ArrowRight" | "ArrowUp";
 
 type NavigationContext = {
   groupId: string;
-  taskId: string;
   runId: string;
+  taskId: string;
 };
 
 type NavigationTarget = {
+  isValid: boolean;
   run: RunWithDuration | null;
   task: GridTask | null;
-  isValid: boolean;
 };
 
-/**
- * 專門處理網格導航計算的類
- * 將複雜的導航邏輯封裝到一個可測試、可復用的類中
- */
 export class NavigationCalculator {
-  constructor(
-    private readonly flatNodes: Array<GridTask>,
-    private readonly runs: Array<RunWithDuration>,
-    private readonly context: NavigationContext
-  ) {}
+  private readonly context: NavigationContext;
+  private readonly flatNodes: Array<GridTask>;
+  private readonly runs: Array<RunWithDuration>;
 
-  /**
-   * 從 URL 參數獲取當前位置
-   */
-  getCurrentIndices = (): NavigationIndices => {
-    const runIndex = Math.max(
-      0,
-      this.runs.findIndex((run) => run.dag_run_id === this.context.runId)
-    );
-    
-    const currentTaskId = this.context.groupId || this.context.taskId;
-    const taskIndex = Math.max(
-      0,
-      this.flatNodes.findIndex((node) => node.id === currentTaskId)
-    );
-
-    return { runIndex, taskIndex };
-  };
-
-  /**
-   * 計算任務索引的下一個位置
-   * 處理任務組的導航邏輯
-   */
-  getNextTaskIndex(current: number, direction: -1 | 1, isJump: boolean): number {
-    // 快速跳轉到邊界
-    if (isJump) {
-      return direction > 0 ? this.flatNodes.length - 1 : 0;
-    }
-    
-    const next = current + direction;
-
-    // 邊界檢查
-    if (next < 0 || next >= this.flatNodes.length) {
-      return current;
-    }
-     
-         const currentTask = this.flatNodes[current];
-     const isMovingDown = direction === 1;
-      
-     // 向下移動時，如果當前是展開的組，進入第一個子任務
-     if (isMovingDown && currentTask && this.isExpandedGroup(currentTask)) {
-       return currentTask.firstChildIndex!;
-     }
-
-     // 向上移動時，如果是組的第一個子任務，返回到父組
-     if (currentTask && this.shouldReturnToParent(currentTask, next, isMovingDown)) {
-       const parentIndex = this.findParentIndex(currentTask, current);
-       return parentIndex !== -1 ? parentIndex : next;
-     }
-     
-    return next;
+  public constructor(
+    flatNodes: Array<GridTask>,
+    runs: Array<RunWithDuration>,
+    context: NavigationContext
+  ) {
+    this.flatNodes = flatNodes;
+    this.runs = runs;
+    this.context = context;
   }
 
-  /**
-   * 計算運行索引的下一個位置
-   */
-  getNextRunIndex(current: number, direction: -1 | 1, isJump: boolean): number {
-    if (isJump) {
-      return direction > 0 ? this.runs.length - 1 : 0;
-    }
-
-    return Math.max(0, Math.min(this.runs.length - 1, current + direction));
+  public static areIndicesEqual(first: NavigationIndices, second: NavigationIndices): boolean {
+    return first.runIndex === second.runIndex && first.taskIndex === second.taskIndex;
   }
 
-  /**
-   * 根據箭頭鍵計算新的索引位置
-   */
-  calculateNewIndices(
+  private static isExpandedGroup(task: GridTask): boolean {
+    return Boolean(
+      task.isGroup && 
+      task.firstChildIndex !== undefined
+    );
+  }
+
+  public calculateNewIndices(
     key: ArrowKey,
     isJump: boolean,
     base?: NavigationIndices
@@ -143,30 +92,67 @@ export class NavigationCalculator {
     }
   }
 
-  /**
-   * 獲取導航目標（任務和運行）
-   */
-  getNavigationTarget(indices: NavigationIndices): NavigationTarget {
+  public getCurrentIndices = (): NavigationIndices => {
+    const runIndex = Math.max(
+      0,
+      this.runs.findIndex((run) => run.dag_run_id === this.context.runId)
+    );
+    
+    const currentTaskId = this.context.groupId || this.context.taskId;
+    const taskIndex = Math.max(
+      0,
+      this.flatNodes.findIndex((node) => node.id === currentTaskId)
+    );
+
+    return { runIndex, taskIndex };
+  };
+
+  public getNavigationTarget(indices: NavigationIndices): NavigationTarget {
     const run = this.runs[indices.runIndex] ?? null;
     const task = this.flatNodes[indices.taskIndex] ?? null;
     const isValid = Boolean(run && task);
 
-    return { run, task, isValid };
+    return { isValid, run, task };
   }
 
-  /**
-   * 檢查兩個索引是否相等
-   */
-  areIndicesEqual(a: NavigationIndices, b: NavigationIndices): boolean {
-    return a.runIndex === b.runIndex && a.taskIndex === b.taskIndex;
+  public getNextRunIndex(current: number, direction: -1 | 1, isJump: boolean): number {
+    if (isJump) {
+      return direction > 0 ? this.runs.length - 1 : 0;
+    }
+
+    return Math.max(0, Math.min(this.runs.length - 1, current + direction));
   }
 
-  // 私有輔助方法
+  public getNextTaskIndex(current: number, direction: -1 | 1, isJump: boolean): number {
+    if (isJump) {
+      return direction > 0 ? this.flatNodes.length - 1 : 0;
+    }
+    
+    const next = current + direction;
 
-  private isExpandedGroup(task: GridTask): boolean {
-    return Boolean(
-      task?.isGroup && 
-      task.firstChildIndex !== undefined
+    if (next < 0 || next >= this.flatNodes.length) {
+      return current;
+    }
+     
+    const currentTask = this.flatNodes[current];
+    const isMovingDown = direction === 1;
+      
+    if (isMovingDown && currentTask && NavigationCalculator.isExpandedGroup(currentTask)) {
+      return currentTask.firstChildIndex ?? current;
+    }
+
+    if (currentTask && this.shouldReturnToParent(currentTask, next, isMovingDown)) {
+      const parentIndex = this.findParentIndex(currentTask, current);
+
+      return parentIndex === -1 ? next : parentIndex;
+    }
+     
+    return next;
+  }
+
+  private findParentIndex(currentTask: GridTask, currentIndex: number): number {
+    return this.flatNodes.findIndex((node, index) => 
+      index < currentIndex && node.id === currentTask.parentId
     );
   }
 
@@ -180,13 +166,7 @@ export class NavigationCalculator {
       Boolean(this.context.taskId) &&
       !this.context.groupId &&
       Boolean(this.flatNodes[nextIndex]?.isFirstChildOfParent) &&
-      Boolean(currentTask?.parentId)
-    );
-  }
-
-  private findParentIndex(currentTask: GridTask, currentIndex: number): number {
-    return this.flatNodes.findIndex((node, index) => 
-      index < currentIndex && node.id === currentTask?.parentId
+      Boolean(currentTask.parentId)
     );
   }
 } 

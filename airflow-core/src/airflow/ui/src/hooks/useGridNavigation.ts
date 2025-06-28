@@ -27,11 +27,10 @@ import { useNavigationKeyboard } from "./navigation/useNavigationKeyboard";
 import { useNavigationPreview } from "./navigation/useNavigationPreview";
 import { useNavigationState } from "./navigation/useNavigationState";
 
-// 配置常量 - 優化的UX時序設計
 export const NAVIGATION_CONFIG = {
-  CONTINUOUS_INTERVAL: 100,  // 連續導航間隔 (毫秒) - 流暢的連續導航
-  LONG_PRESS_THRESHOLD: 500, // 長按閾值 (毫秒) - 明確的長按意圖
-  PREVIEW_DELAY: 200,        // 預覽延遲 (毫秒) - 避免快速操作時的閃爍
+  CONTINUOUS_INTERVAL: 100,
+  LONG_PRESS_THRESHOLD: 500,
+  PREVIEW_DELAY: 200,
 } as const;
 
 export type NavigationIndices = {
@@ -49,13 +48,11 @@ export const useGridNavigation = ({ flatNodes, isGridFocused, runs }: Props) => 
   const navigate = useNavigate();
   const { dagId = "", groupId = "", runId = "", taskId = "" } = useParams();
   
-  // 創建導航計算器實例 - 使用 useMemo 避免重新創建
   const navigationCalculator = useMemo(
     () => new NavigationCalculator(flatNodes, runs, { groupId, runId, taskId }),
     [flatNodes, runs, groupId, taskId, runId]
   );
 
-  // 分離關注點：狀態管理
   const {
     isInPreviewMode,
     navigationState,
@@ -64,13 +61,11 @@ export const useGridNavigation = ({ flatNodes, isGridFocused, runs }: Props) => 
     startPreviewMode,
   } = useNavigationState();
 
-  // 分離關注點：視覺預覽效果
   const { applyPreviewEffect, clearPreviewEffect } = useNavigationPreview(
     runs,
     flatNodes
   );
 
-  // 導航執行函數
   const navigateToPosition = useCallback((indices: NavigationIndices) => {
     const { isValid, run, task } = navigationCalculator.getNavigationTarget(indices);
     
@@ -90,7 +85,6 @@ export const useGridNavigation = ({ flatNodes, isGridFocused, runs }: Props) => 
     navigate({ pathname: path, search }, { replace: true });
   }, [navigate, dagId, navigationCalculator]);
 
-  // 分離關注點：鍵盤事件處理
   const keyboardHandlers = useNavigationKeyboard({
     applyPreviewEffect,
     clearPreviewEffect,

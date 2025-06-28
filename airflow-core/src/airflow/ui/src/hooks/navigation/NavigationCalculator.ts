@@ -165,7 +165,7 @@ export class NavigationCalculator {
       !isMovingDown &&
       Boolean(this.context.taskId) &&
       !this.context.groupId &&
-      Boolean(this.flatNodes[nextIndex]?.isFirstChildOfParent) &&
+      Boolean(currentTask.isFirstChildOfParent) &&
       Boolean(currentTask.parentId)
     );
   }

@@ -59,12 +59,10 @@ export const flattenNodes = (nodes: Array<NodeResponse>, openGroupIds: Array<str
 
       const firstChildWillBeAtIndex = flatNodes.length;
       
-      // Process all children
       node.children.forEach((child) => {
         processNode(child, currentDepth + 1, node.id);
       });
       
-      // Update group's firstChildIndex and mark first child
       if (flatNodes.length > firstChildWillBeAtIndex) {
         const groupNode = flatNodes[groupIndex];
         const firstChild = flatNodes[firstChildWillBeAtIndex];
@@ -80,7 +78,6 @@ export const flattenNodes = (nodes: Array<NodeResponse>, openGroupIds: Array<str
       return;
     }
 
-    // Process regular task nodes
     flatNodes.push({ 
       ...node, 
       depth: currentDepth,

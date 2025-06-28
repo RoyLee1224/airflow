@@ -16,16 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import type { ReactNode } from "react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, type PropsWithChildren } from "react";
 
-import { NavigationPreviewContext } from "./Context";
+import { NavigationPreviewContext, type NavigationPreviewContextType } from "./Context";
 
-type Props = {
-  readonly children: ReactNode;
-};
-
-export const NavigationPreviewProvider = ({ children }: Props) => {
+export const NavigationPreviewProvider = ({ children }: PropsWithChildren) => {
   const [previewTaskId, setPreviewTaskId] = useState<string | undefined>(undefined);
   const [previewRunId, setPreviewRunId] = useState<string | undefined>(undefined);
 
@@ -39,7 +34,7 @@ export const NavigationPreviewProvider = ({ children }: Props) => {
     setPreviewRunId(undefined);
   }, []);
 
-  const value = useMemo(
+  const value = useMemo<NavigationPreviewContextType>(
     () => ({
       clearPreview,
       previewRunId,

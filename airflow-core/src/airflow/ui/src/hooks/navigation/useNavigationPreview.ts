@@ -19,55 +19,20 @@
 import { useCallback } from "react";
 
 import type { GridTask, RunWithDuration } from "src/layouts/Details/Grid/utils";
+import { useNavigationPreview } from "src/context/navigationPreview";
+
 import type { NavigationIndices } from "../useGridNavigation";
 
-const PREVIEW_STYLES = {
-  BACKGROUND_COLOR: "var(--chakra-colors-blue-subtle)",
-  PREVIEW_ATTRIBUTE: "data-navigation-preview",
-} as const;
-
-const applyTaskPreview = (task: GridTask): void => {
-  const safeTaskId = task.id.replaceAll(".", "-");
-  const taskElements = document.querySelectorAll<HTMLElement>(`#${safeTaskId}`);
-
-  taskElements.forEach((element) => {
-    element.style.backgroundColor = PREVIEW_STYLES.BACKGROUND_COLOR;
-    element.setAttribute(PREVIEW_STYLES.PREVIEW_ATTRIBUTE, "true");
-  });
-};
-
-const applyRunPreview = (run: RunWithDuration): void => {
-  const runElements = document.querySelectorAll<HTMLElement>(
-    `[data-run-id="${run.dag_run_id}"]`
-  );
-
-  runElements.forEach((element) => {
-    element.style.backgroundColor = PREVIEW_STYLES.BACKGROUND_COLOR;
-    element.setAttribute(PREVIEW_STYLES.PREVIEW_ATTRIBUTE, "true");
-  });
-};
-
-export const useNavigationPreview = (
+export const useNavigationPreviewEffect = (
   runs: Array<RunWithDuration>,
   flatNodes: Array<GridTask>
 ) => {
-  const clearPreviewEffect = useCallback(() => {
-    const previewElements = document.querySelectorAll(
-      `[${PREVIEW_STYLES.PREVIEW_ATTRIBUTE}="true"]`
-    );
-    
-    previewElements.forEach((element) => {
-      const htmlElement = element as HTMLElement;
+  const { clearPreview, setPreview } = useNavigationPreview();
 
-      htmlElement.style.backgroundColor = '';
-      htmlElement.removeAttribute(PREVIEW_STYLES.PREVIEW_ATTRIBUTE);
-    });
-  }, []);
-
-  const applyPreviewEffect = useCallback((indices: NavigationIndices | null) => {
-    clearPreviewEffect();
-
+  const applyPreviewEffect = useCallback((indices: NavigationIndices | undefined) => {
     if (!indices) {
+      clearPreview();
+
       return;
     }
 
@@ -75,12 +40,17 @@ export const useNavigationPreview = (
     const task = flatNodes[indices.taskIndex];
     
     if (!run || !task) {
+      clearPreview();
+
       return;
     }
 
-    applyTaskPreview(task);
-    applyRunPreview(run);
-  }, [runs, flatNodes, clearPreviewEffect]);
+    setPreview(task.id, run.dag_run_id);
+  }, [runs, flatNodes, setPreview, clearPreview]);
+
+  const clearPreviewEffect = useCallback(() => {
+    clearPreview();
+  }, [clearPreview]);
 
   return {
     applyPreviewEffect,

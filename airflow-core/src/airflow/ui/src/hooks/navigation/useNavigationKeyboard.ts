@@ -30,14 +30,14 @@ type NavigationConfig = {
 };
 
 type KeyboardState = {
-  activeKey: ArrowKey | null;
-  currentPreviewIndices: NavigationIndices | null;
+  activeKey: ArrowKey | undefined;
+  currentPreviewIndices: NavigationIndices | undefined;
   keyPressTime: number;
   timeouts: Array<NodeJS.Timeout>;
 };
 
 type Props = {
-  applyPreviewEffect: (indices: NavigationIndices | null) => void;
+  applyPreviewEffect: (indices: NavigationIndices | undefined) => void;
   clearPreviewEffect: () => void;
   config: NavigationConfig;
   groupId: string;
@@ -65,8 +65,8 @@ export const useNavigationKeyboard = ({
 }: Props) => {
   
   const stateRef = useRef<KeyboardState>({
-    activeKey: null,
-    currentPreviewIndices: null,
+    activeKey: undefined,
+    currentPreviewIndices: undefined,
     keyPressTime: 0,
     timeouts: [],
   });
@@ -165,8 +165,8 @@ export const useNavigationKeyboard = ({
       navigateToPosition(newIndices);
     }
     
-    stateRef.current.activeKey = null;
-    stateRef.current.currentPreviewIndices = null;
+    stateRef.current.activeKey = undefined;
+    stateRef.current.currentPreviewIndices = undefined;
   }, [
     clearTimeouts,
     clearPreviewEffect,
@@ -213,8 +213,8 @@ export const useNavigationKeyboard = ({
     clearTimeouts();
     clearPreviewEffect();
     resetNavigationState();
-    stateRef.current.activeKey = null;
-    stateRef.current.currentPreviewIndices = null;
+    stateRef.current.activeKey = undefined;
+    stateRef.current.currentPreviewIndices = undefined;
   }, [runId, taskId, groupId, clearTimeouts, clearPreviewEffect, resetNavigationState]);
 
 }; 

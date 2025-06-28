@@ -29,8 +29,8 @@ type NavigationContext = {
 
 type NavigationTarget = {
   isValid: boolean;
-  run: RunWithDuration | null;
-  task: GridTask | null;
+  run: RunWithDuration | undefined;
+  task: GridTask | undefined;
 };
 
 export class NavigationCalculator {
@@ -108,8 +108,8 @@ export class NavigationCalculator {
   };
 
   public getNavigationTarget(indices: NavigationIndices): NavigationTarget {
-    const run = this.runs[indices.runIndex] ?? null;
-    const task = this.flatNodes[indices.taskIndex] ?? null;
+    const run = this.runs[indices.runIndex] ?? undefined;
+    const task = this.flatNodes[indices.taskIndex] ?? undefined;
     const isValid = Boolean(run && task);
 
     return { isValid, run, task };

@@ -24,7 +24,7 @@ import { getTaskNavigationPath } from "src/utils/links";
 
 import { NavigationCalculator } from "./navigation/NavigationCalculator";
 import { useNavigationKeyboard } from "./navigation/useNavigationKeyboard";
-import { useNavigationPreview } from "./navigation/useNavigationPreview";
+import { useNavigationPreviewEffect } from "./navigation/useNavigationPreview";
 import { useNavigationState } from "./navigation/useNavigationState";
 
 export const NAVIGATION_CONFIG = {
@@ -57,7 +57,7 @@ export const useGridNavigation = ({ flatNodes, isGridFocused, runs }: Props) => 
     startContinuousMode,
   } = useNavigationState();
 
-  const { applyPreviewEffect, clearPreviewEffect } = useNavigationPreview(
+  const { applyPreviewEffect, clearPreviewEffect } = useNavigationPreviewEffect(
     runs,
     flatNodes
   );

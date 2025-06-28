@@ -24,6 +24,7 @@ import { Link as RouterLink, useParams, useSearchParams } from "react-router-dom
 
 import { TaskName } from "src/components/TaskName";
 import { useOpenGroups } from "src/context/openGroups";
+import { useNavigationPreview } from "src/context/navigationPreview";
 
 import type { GridTask } from "./utils";
 
@@ -53,10 +54,17 @@ export const TaskNames = ({ nodes }: Props) => {
   const { toggleGroupId } = useOpenGroups();
   const { dagId = "", groupId, taskId } = useParams();
   const [searchParams] = useSearchParams();
+  const { previewTaskId } = useNavigationPreview();
 
   return nodes.map((node) => (
     <Box
-      bg={node.id === taskId || node.id === groupId ? "blue.muted" : undefined}
+      bg={
+        node.id === taskId || node.id === groupId
+          ? "blue.muted"
+          : previewTaskId === node.id
+          ? "blue.subtle"
+          : undefined
+      }
       borderBottomWidth={1}
       borderColor={node.isGroup ? "border.emphasized" : "border.muted"}
       id={node.id.replaceAll(".", "-")}

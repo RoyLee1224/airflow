@@ -25,6 +25,7 @@ import { FiChevronsRight } from "react-icons/fi";
 import { Link, useParams } from "react-router-dom";
 
 import { useOpenGroups } from "src/context/openGroups";
+import { NavigationPreviewProvider } from "src/context/navigationPreview";
 import { useGridNavigation } from "src/hooks/useGridNavigation";
 import { useGrid } from "src/queries/useGrid";
 import { getMetaKey } from "src/utils";
@@ -41,7 +42,7 @@ type Props = {
   readonly limit: number;
 };
 
-export const Grid = ({ limit }: Props) => {
+const GridContent = ({ limit }: Props) => {
   const { t: translate } = useTranslation("dag");
   const { openGroupIds } = useOpenGroups();
   const { dagId = "" } = useParams();
@@ -185,3 +186,9 @@ export const Grid = ({ limit }: Props) => {
     </Flex>
   );
 };
+
+export const Grid = ({ limit }: Props) => (
+  <NavigationPreviewProvider>
+    <GridContent limit={limit} />
+  </NavigationPreviewProvider>
+);

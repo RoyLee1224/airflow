@@ -141,7 +141,7 @@ export class NavigationCalculator {
       return currentTask.firstChildIndex ?? current;
     }
 
-    if (currentTask && this.shouldReturnToParent(currentTask, next, isMovingDown)) {
+    if (currentTask && this.shouldReturnToParent(currentTask, isMovingDown)) {
       const parentIndex = this.findParentIndex(currentTask, current);
 
       return parentIndex === -1 ? next : parentIndex;
@@ -158,7 +158,6 @@ export class NavigationCalculator {
 
   private shouldReturnToParent(
     currentTask: GridTask,
-    nextIndex: number,
     isMovingDown: boolean
   ): boolean {
     return (

@@ -18,18 +18,15 @@
  */
 import { useCallback, useRef, useEffect } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
-import { useParams } from "react-router-dom";
 
 import type { NavigationIndices } from "../useGridNavigation";
 import { NavigationCalculator, type ArrowKey } from "./NavigationCalculator";
-import type { NavigationState } from "./useNavigationState";
 
 const ARROW_KEYS = ["ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight"] as const;
 
 type NavigationConfig = {
   CONTINUOUS_INTERVAL: number;
   LONG_PRESS_THRESHOLD: number;
-  PREVIEW_DELAY: number;
 };
 
 type KeyboardState = {
@@ -43,26 +40,29 @@ type Props = {
   applyPreviewEffect: (indices: NavigationIndices | null) => void;
   clearPreviewEffect: () => void;
   config: NavigationConfig;
+  groupId: string;
   isGridFocused: boolean;
   navigateToPosition: (indices: NavigationIndices) => void;
   navigationCalculator: NavigationCalculator;
   resetNavigationState: () => void;
-  setNavigationState: (state: NavigationState) => void;
-  startPreviewMode: () => void;
+  runId: string;
+  startContinuousMode: () => void;
+  taskId: string;
 };
 
 export const useNavigationKeyboard = ({
   applyPreviewEffect,
   clearPreviewEffect,
   config,
+  groupId,
   isGridFocused,
   navigateToPosition,
   navigationCalculator,
   resetNavigationState,
-  setNavigationState,
-  startPreviewMode,
+  runId,
+  startContinuousMode,
+  taskId,
 }: Props) => {
-  const { groupId, runId, taskId } = useParams();
   
   const stateRef = useRef<KeyboardState>({
     activeKey: null,
@@ -81,7 +81,7 @@ export const useNavigationKeyboard = ({
     isJump: boolean, 
     baseIndices: NavigationIndices
   ) => {
-    setNavigationState('continuous');
+    startContinuousMode();
     
     const navigateStep = () => {
       const newIndices = navigationCalculator.calculateNewIndices(key, isJump, baseIndices);
@@ -100,7 +100,7 @@ export const useNavigationKeyboard = ({
     };
      
     navigateStep();
-  }, [navigationCalculator, applyPreviewEffect, setNavigationState, config.CONTINUOUS_INTERVAL]);
+  }, [navigationCalculator, applyPreviewEffect, startContinuousMode, config.CONTINUOUS_INTERVAL]);
 
   const handleKeyDown = useCallback((key: ArrowKey, isJump: boolean) => {
     if (stateRef.current.activeKey === key) {
@@ -118,20 +118,12 @@ export const useNavigationKeyboard = ({
 
     if (isJump) {
       navigateToPosition(newIndices);
-
+      
       return;
     }
 
     stateRef.current.activeKey = key;
     stateRef.current.keyPressTime = Date.now();
-    
-    const showPreviewTimeout = setTimeout(() => {
-      if (stateRef.current.activeKey === key) {
-        startPreviewMode();
-      }
-    }, config.PREVIEW_DELAY);
-
-    stateRef.current.timeouts.push(showPreviewTimeout);
 
     const longPressTimeout = setTimeout(() => {
       if (stateRef.current.activeKey === key) {
@@ -146,11 +138,9 @@ export const useNavigationKeyboard = ({
     navigationCalculator,
     clearTimeouts,
     navigateToPosition,
-    startPreviewMode,
     applyPreviewEffect,
     startContinuous,
     config.LONG_PRESS_THRESHOLD,
-    config.PREVIEW_DELAY,
   ]);
 
   const handleKeyUp = useCallback((key: ArrowKey) => {
@@ -227,8 +217,4 @@ export const useNavigationKeyboard = ({
     stateRef.current.currentPreviewIndices = null;
   }, [runId, taskId, groupId, clearTimeouts, clearPreviewEffect, resetNavigationState]);
 
-  return {
-    handleKeyDown,
-    handleKeyUp,
-  };
 }; 

@@ -30,7 +30,6 @@ import { useNavigationState } from "./navigation/useNavigationState";
 export const NAVIGATION_CONFIG = {
   CONTINUOUS_INTERVAL: 100,
   LONG_PRESS_THRESHOLD: 500,
-  PREVIEW_DELAY: 200,
 } as const;
 
 export type NavigationIndices = {
@@ -54,11 +53,8 @@ export const useGridNavigation = ({ flatNodes, isGridFocused, runs }: Props) => 
   );
 
   const {
-    isInPreviewMode,
-    navigationState,
     resetNavigationState,
-    setNavigationState,
-    startPreviewMode,
+    startContinuousMode,
   } = useNavigationState();
 
   const { applyPreviewEffect, clearPreviewEffect } = useNavigationPreview(
@@ -85,23 +81,19 @@ export const useGridNavigation = ({ flatNodes, isGridFocused, runs }: Props) => 
     navigate({ pathname: path, search }, { replace: true });
   }, [navigate, dagId, navigationCalculator]);
 
-  const keyboardHandlers = useNavigationKeyboard({
+  useNavigationKeyboard({
     applyPreviewEffect,
     clearPreviewEffect,
     config: NAVIGATION_CONFIG,
+    groupId,
     isGridFocused,
     navigateToPosition,
     navigationCalculator,
     resetNavigationState,
-    setNavigationState,
-    startPreviewMode,
+    runId,
+    startContinuousMode,
+    taskId,
   });
 
-  return {
-    getCurrentIndices: navigationCalculator.getCurrentIndices,
-    isInPreviewMode,
-    navigateToPosition,
-    navigationState,
-    ...keyboardHandlers,
-  };
+  return {};
 };

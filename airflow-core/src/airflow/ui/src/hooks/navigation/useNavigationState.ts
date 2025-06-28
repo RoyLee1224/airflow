@@ -18,20 +18,13 @@
  */
 import { useCallback, useState } from "react";
 
-export type NavigationState = 'continuous' | 'idle' | 'previewing';
+export type NavigationState = 'continuous' | 'idle';
 
 export const useNavigationState = () => {
-  const [isInPreviewMode, setIsInPreviewMode] = useState(false);
   const [navigationState, setNavigationState] = useState<NavigationState>('idle');
 
   const resetNavigationState = useCallback(() => {
-    setIsInPreviewMode(false);
     setNavigationState('idle');
-  }, []);
-
-  const startPreviewMode = useCallback(() => {
-    setIsInPreviewMode(true);
-    setNavigationState('previewing');
   }, []);
 
   const startContinuousMode = useCallback(() => {
@@ -39,11 +32,8 @@ export const useNavigationState = () => {
   }, []);
 
   return {
-    isInPreviewMode,
     navigationState,
     resetNavigationState,
-    setNavigationState,
     startContinuousMode,
-    startPreviewMode,
   };
 }; 

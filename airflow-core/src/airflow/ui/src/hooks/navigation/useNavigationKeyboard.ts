@@ -31,8 +31,8 @@ type NavigationConfig = {
 
 type KeyboardState = {
   activeKey: ArrowKey | undefined;
-  currentPreviewIndices: NavigationIndices | undefined;
   keyPressTime: number;
+  lastContinuousIndices: NavigationIndices | undefined;
   timeouts: Array<NodeJS.Timeout>;
 };
 
@@ -66,8 +66,8 @@ export const useNavigationKeyboard = ({
   
   const stateRef = useRef<KeyboardState>({
     activeKey: undefined,
-    currentPreviewIndices: undefined,
     keyPressTime: 0,
+    lastContinuousIndices: undefined,
     timeouts: [],
   });
 
@@ -91,7 +91,7 @@ export const useNavigationKeyboard = ({
       }
        
       applyPreviewEffect(newIndices);
-      stateRef.current.currentPreviewIndices = { ...newIndices };
+      stateRef.current.lastContinuousIndices = { ...newIndices };
        
       const timeout = setTimeout(navigateStep, config.CONTINUOUS_INTERVAL);
 
@@ -118,7 +118,7 @@ export const useNavigationKeyboard = ({
 
     if (isJump) {
       navigateToPosition(newIndices);
-      
+
       return;
     }
 
@@ -128,7 +128,6 @@ export const useNavigationKeyboard = ({
     const longPressTimeout = setTimeout(() => {
       if (stateRef.current.activeKey === key) {
         applyPreviewEffect(newIndices);
-        stateRef.current.currentPreviewIndices = { ...newIndices };
         startContinuous(key, isJump, { ...newIndices });
       }
     }, config.LONG_PRESS_THRESHOLD);
@@ -149,24 +148,22 @@ export const useNavigationKeyboard = ({
     }
 
     const pressDuration = Date.now() - stateRef.current.keyPressTime;
+    const isShortPress = pressDuration < config.LONG_PRESS_THRESHOLD;
     
     clearTimeouts();
     clearPreviewEffect();
     resetNavigationState();
     
-    if (pressDuration >= config.LONG_PRESS_THRESHOLD) {
-      const finalIndices = stateRef.current.currentPreviewIndices ?? 
-        navigationCalculator.calculateNewIndices(key, false);
-
-      navigateToPosition(finalIndices);
-    } else {
+    if (isShortPress) {
       const newIndices = navigationCalculator.calculateNewIndices(key, false);
 
       navigateToPosition(newIndices);
+    } else if (stateRef.current.lastContinuousIndices) {
+      navigateToPosition(stateRef.current.lastContinuousIndices);
     }
     
     stateRef.current.activeKey = undefined;
-    stateRef.current.currentPreviewIndices = undefined;
+    stateRef.current.lastContinuousIndices = undefined;
   }, [
     clearTimeouts,
     clearPreviewEffect,
@@ -180,41 +177,30 @@ export const useNavigationKeyboard = ({
     ARROW_KEYS.flatMap((key) => [key, `mod+${key}`]),
     (event) => {
       event.stopPropagation();
-      handleKeyDown(event.key as ArrowKey, event.metaKey || event.ctrlKey);
+      
+      if (event.type === 'keydown') {
+        handleKeyDown(event.key as ArrowKey, event.metaKey || event.ctrlKey);
+      } else {
+        handleKeyUp(event.key as ArrowKey);
+      }
     },
     { 
-      enabled: isGridFocused, 
-      keydown: true, 
-      keyup: false,
+      enabled: isGridFocused,
+      keydown: true,
+      keyup: true,
       preventDefault: true,
     }
   );
 
-  useHotkeys(
-    ARROW_KEYS.flatMap((key) => [key, `mod+${key}`]),
-    (event) => {
-      event.stopPropagation();
-      handleKeyUp(event.key as ArrowKey);
-    },
-    { 
-      enabled: isGridFocused, 
-      keydown: false, 
-      keyup: true, 
-      preventDefault: true,
-    }
-  );
-
-  useEffect(() => () => {
-    clearTimeouts();
-    clearPreviewEffect();
-  }, [clearTimeouts, clearPreviewEffect]);
-
-  useEffect(() => {
+  const cleanup = useCallback(() => {
     clearTimeouts();
     clearPreviewEffect();
     resetNavigationState();
     stateRef.current.activeKey = undefined;
-    stateRef.current.currentPreviewIndices = undefined;
-  }, [runId, taskId, groupId, clearTimeouts, clearPreviewEffect, resetNavigationState]);
+    stateRef.current.lastContinuousIndices = undefined;
+  }, [clearTimeouts, clearPreviewEffect, resetNavigationState]);
+
+  useEffect(() => cleanup, [cleanup]);
+  useEffect(() => { cleanup(); }, [runId, taskId, groupId, cleanup]);
 
 }; 

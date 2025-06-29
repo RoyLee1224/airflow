@@ -27,6 +27,7 @@ import { Link, useParams } from "react-router-dom";
 import { useOpenGroups } from "src/context/openGroups";
 import { NavigationPreviewProvider } from "src/context/navigationPreview";
 import { useGridNavigation } from "src/hooks/useGridNavigation";
+import { useSmartNavigation } from "src/hooks/navigation/useSmartNavigation";
 import { useGrid } from "src/queries/useGrid";
 import { getMetaKey } from "src/utils";
 
@@ -78,6 +79,12 @@ const GridContent = ({ limit }: Props) => {
   );
 
   useGridNavigation({
+    flatNodes,
+    isGridFocused,
+    runs,
+  });
+
+  useSmartNavigation({
     flatNodes,
     isGridFocused,
     runs,

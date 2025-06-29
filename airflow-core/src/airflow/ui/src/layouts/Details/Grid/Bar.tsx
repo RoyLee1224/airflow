@@ -40,7 +40,6 @@ export const Bar = ({ max, nodes, run }: Props) => {
   const { previewRunId } = useNavigationPreview();
 
   const isSelected = runId === run.dag_run_id;
-
   const search = searchParams.toString();
 
   return (

@@ -43,7 +43,14 @@ type Props = {
   runs: Array<RunWithDuration>;
 };
 
-export const useGridNavigation = ({ flatNodes, isGridFocused, runs }: Props) => {
+export type GridNavigationReturn = {
+  currentIndices: NavigationIndices;
+  isNavigating: boolean;
+  navigateToPosition: (indices: NavigationIndices) => void;
+  navigationCalculator: NavigationCalculator;
+};
+
+export const useGridNavigation = ({ flatNodes, isGridFocused, runs }: Props): GridNavigationReturn => {
   const navigate = useNavigate();
   const { dagId = "", groupId = "", runId = "", taskId = "" } = useParams();
   
@@ -53,6 +60,7 @@ export const useGridNavigation = ({ flatNodes, isGridFocused, runs }: Props) => 
   );
 
   const {
+    navigationState,
     resetNavigationState,
     startContinuousMode,
   } = useNavigationState();
@@ -95,5 +103,10 @@ export const useGridNavigation = ({ flatNodes, isGridFocused, runs }: Props) => 
     taskId,
   });
 
-  return {};
+  return {
+    currentIndices: navigationCalculator.getCurrentIndices(),
+    isNavigating: navigationState === 'continuous',
+    navigateToPosition,
+    navigationCalculator,
+  };
 };

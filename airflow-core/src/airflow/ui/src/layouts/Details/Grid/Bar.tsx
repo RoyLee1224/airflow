@@ -29,13 +29,31 @@ import type { GridTask } from "./utils";
 
 const BAR_HEIGHT = 100;
 
+type NavigationMode = "task" | "run" | "grid";
+
 type Props = {
   readonly max: number;
   readonly nodes: Array<GridTask>;
   readonly run: GridRunsResponse;
+  readonly runs?: Array<GridRunsResponse>;
+  readonly currentTaskIndex?: number;
+  readonly currentRunIndex?: number;
+  readonly navigationMode?: NavigationMode;
+  readonly isPreviewMode?: boolean;
+  readonly onNavigationModeChange?: (mode: NavigationMode) => void;
 };
 
-export const Bar = ({ max, nodes, run }: Props) => {
+export const Bar = ({ 
+  max, 
+  nodes, 
+  run,
+  runs = [],
+  currentTaskIndex = -1,
+  currentRunIndex = -1,
+  navigationMode = "grid",
+  isPreviewMode = false,
+  onNavigationModeChange 
+}: Props) => {
   const { dagId = "", runId } = useParams();
   const [searchParams] = useSearchParams();
 
@@ -44,12 +62,37 @@ export const Bar = ({ max, nodes, run }: Props) => {
   const search = searchParams.toString();
   const { data: gridTISummaries } = useGridTiSummaries(run);
 
+  const handleRunClick = () => {
+    if (onNavigationModeChange) {
+      onNavigationModeChange("run");
+    }
+  };
+
+  // Determine if this run column should be highlighted  
+  // Need to find the actual index of this run in the runs array
+  const actualRunIndex = runs.findIndex(r => r.run_id === run.run_id);
+  const isCurrentRun = actualRunIndex === currentRunIndex;
+  const isRunHighlighted = isCurrentRun && (navigationMode === "run" || navigationMode === "grid");
+  const isPreviewHighlighted = isCurrentRun && isPreviewMode;
+
   return (
     <Box
       _hover={{ bg: "blue.subtle" }}
-      bg={isSelected ? "blue.muted" : undefined}
+      bg={
+        isRunHighlighted
+          ? isPreviewHighlighted
+            ? "yellow.muted"
+            : "blue.emphasized"
+          : isSelected
+            ? "blue.muted"
+            : undefined
+      }
+      borderTopWidth={isRunHighlighted ? 3 : 0}
+      borderTopColor={isPreviewHighlighted ? "yellow.solid" : "blue.solid"}
       position="relative"
-      transition="background-color 0.2s"
+      transition="all 0.2s"
+      onClick={handleRunClick}
+      cursor={isRunHighlighted ? "pointer" : "default"}
     >
       <Flex
         alignItems="flex-end"
@@ -81,6 +124,10 @@ export const Bar = ({ max, nodes, run }: Props) => {
         nodes={nodes}
         runId={run.run_id}
         taskInstances={gridTISummaries?.task_instances ?? []}
+        currentTaskIndex={currentTaskIndex}
+        currentRunIndex={currentRunIndex}
+        navigationMode={navigationMode}
+        isPreviewMode={isPreviewMode}
       />
     </Box>
   );

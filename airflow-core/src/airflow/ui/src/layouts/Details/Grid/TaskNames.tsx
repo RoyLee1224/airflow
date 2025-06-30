@@ -27,9 +27,15 @@ import { useOpenGroups } from "src/context/openGroups";
 
 import type { GridTask } from "./utils";
 
+type NavigationMode = "task" | "run" | "grid";
+
 type Props = {
   depth?: number;
   nodes: Array<GridTask>;
+  currentTaskIndex?: number;
+  navigationMode?: NavigationMode;
+  isPreviewMode?: boolean;
+  onNavigationModeChange?: (mode: NavigationMode) => void;
 };
 
 const onMouseEnter = (event: MouseEvent<HTMLDivElement>) => {
@@ -48,23 +54,52 @@ const onMouseLeave = (event: MouseEvent<HTMLDivElement>) => {
   });
 };
 
-export const TaskNames = ({ nodes }: Props) => {
+export const TaskNames = ({ 
+  nodes, 
+  currentTaskIndex = -1,
+  navigationMode = "grid",
+  isPreviewMode = false,
+  onNavigationModeChange 
+}: Props) => {
   const { t: translate } = useTranslation("dag");
   const { toggleGroupId } = useOpenGroups();
   const { dagId = "", groupId, taskId } = useParams();
   const [searchParams] = useSearchParams();
 
-  return nodes.map((node) => (
+  const handleTaskClick = (taskIndex: number) => {
+    if (onNavigationModeChange) {
+      onNavigationModeChange("task");
+    }
+  };
+
+  return nodes.map((node, index) => {
+    const isCurrentTask = index === currentTaskIndex;
+    const isNavigationHighlighted = isCurrentTask && (navigationMode === "task" || navigationMode === "grid");
+    const isPreviewHighlighted = isCurrentTask && isPreviewMode;
+
+    return (
     <Box
-      bg={node.id === taskId || node.id === groupId ? "blue.muted" : undefined}
+      bg={
+        isNavigationHighlighted
+          ? isPreviewHighlighted
+            ? "yellow.muted"
+            : "blue.emphasized"
+          : node.id === taskId || node.id === groupId
+            ? "blue.muted"
+            : undefined
+      }
       borderBottomWidth={1}
       borderColor={node.isGroup ? "border.emphasized" : "border.muted"}
+      borderLeftWidth={isNavigationHighlighted ? 3 : 0}
+      borderLeftColor={isPreviewHighlighted ? "yellow.solid" : "blue.solid"}
       id={node.id.replaceAll(".", "-")}
       key={node.id}
       maxHeight="20px"
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      transition="background-color 0.2s"
+      onClick={() => handleTaskClick(index)}
+      transition="all 0.2s"
+      cursor={isNavigationHighlighted ? "pointer" : "default"}
     >
       {node.isGroup ? (
         <Flex alignItems="center">
@@ -126,5 +161,6 @@ export const TaskNames = ({ nodes }: Props) => {
         </Link>
       )}
     </Box>
-  ));
+    );
+  });
 };

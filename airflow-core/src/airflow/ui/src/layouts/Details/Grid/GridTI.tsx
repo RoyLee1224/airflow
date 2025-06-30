@@ -33,6 +33,8 @@ type Props = {
   readonly search: string;
   readonly state?: TaskInstanceState | null;
   readonly taskId: string;
+  readonly isNavigationHighlighted?: boolean;
+  readonly isPreviewHighlighted?: boolean;
 };
 
 const onMouseEnter = (event: MouseEvent<HTMLDivElement>) => {
@@ -51,13 +53,33 @@ const onMouseLeave = (event: MouseEvent<HTMLDivElement>) => {
   });
 };
 
-const Instance = ({ dagId, isGroup, isMapped, runId, search, state, taskId }: Props) => {
+const Instance = ({ 
+  dagId, 
+  isGroup, 
+  isMapped, 
+  runId, 
+  search, 
+  state, 
+  taskId,
+  isNavigationHighlighted = false,
+  isPreviewHighlighted = false
+}: Props) => {
   const { groupId: selectedGroupId, taskId: selectedTaskId } = useParams();
 
   return (
     <Flex
       alignItems="center"
-      bg={selectedTaskId === taskId || selectedGroupId === taskId ? "blue.muted" : undefined}
+      bg={
+        isNavigationHighlighted
+          ? isPreviewHighlighted
+            ? "yellow.muted"
+            : "blue.emphasized"
+          : selectedTaskId === taskId || selectedGroupId === taskId
+            ? "blue.muted"
+            : undefined
+      }
+      borderWidth={isNavigationHighlighted ? 2 : 0}
+      borderColor={isPreviewHighlighted ? "yellow.solid" : "blue.solid"}
       height="20px"
       id={taskId.replaceAll(".", "-")}
       justifyContent="center"
@@ -66,8 +88,11 @@ const Instance = ({ dagId, isGroup, isMapped, runId, search, state, taskId }: Pr
       onMouseLeave={onMouseLeave}
       px="2px"
       py={0}
-      transition="background-color 0.2s"
+      transition="all 0.2s"
       zIndex={1}
+      role="gridcell"
+      aria-label={`Task ${taskId}, state: ${state || "unknown"}`}
+      aria-selected={isNavigationHighlighted}
     >
       <Link
         replace

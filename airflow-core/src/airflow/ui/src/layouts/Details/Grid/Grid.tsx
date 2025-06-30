@@ -33,7 +33,9 @@ import { isStatePending } from "src/utils";
 import { Bar } from "./Bar";
 import { DurationAxis } from "./DurationAxis";
 import { DurationTick } from "./DurationTick";
+import { NavigationIndicator } from "./NavigationIndicator";
 import { TaskNames } from "./TaskNames";
+import { useGridNavigation } from "./useGridNavigation";
 import { flattenNodes } from "./utils";
 
 dayjs.extend(dayjsDuration);
@@ -86,10 +88,46 @@ export const Grid = ({ limit }: Props) => {
   );
   const { flatNodes } = useMemo(() => flattenNodes(dagStructure, openGroupIds), [dagStructure, openGroupIds]);
 
+  // Initialize keyboard navigation
+  const {
+    currentTaskIndex,
+    currentRunIndex,
+    navigationMode,
+    isPreviewMode,
+    setNavigationMode,
+  } = useGridNavigation({
+    nodes: flatNodes,
+    runs: gridRuns ?? [],
+  });
+
   return (
-    <Flex justifyContent="flex-start" position="relative" pt={50} width="100%">
+    <>
+      <NavigationIndicator
+        mode={navigationMode}
+        isPreviewMode={isPreviewMode}
+        currentTaskIndex={currentTaskIndex}
+        currentRunIndex={currentRunIndex}
+        totalTasks={flatNodes.length}
+        totalRuns={gridRuns?.length ?? 0}
+      />
+      <Flex 
+        justifyContent="flex-start" 
+        position="relative" 
+        pt={50} 
+        width="100%"
+        tabIndex={0}
+        role="grid"
+        aria-label="DAG grid view - use arrow keys to navigate, long press for preview"
+        outline="none"
+      >
       <Box flexGrow={1} minWidth={7} position="relative" top="100px">
-        <TaskNames nodes={flatNodes} />
+        <TaskNames 
+          nodes={flatNodes} 
+          currentTaskIndex={currentTaskIndex}
+          navigationMode={navigationMode}
+          isPreviewMode={isPreviewMode}
+          onNavigationModeChange={setNavigationMode}
+        />
       </Box>
       <Box position="relative">
         <Flex position="relative">
@@ -107,7 +145,18 @@ export const Grid = ({ limit }: Props) => {
           </Flex>
           <Flex flexDirection="row-reverse">
             {gridRuns?.map((dr: GridRunsResponse) => (
-              <Bar key={dr.run_id} max={max} nodes={flatNodes} run={dr} />
+              <Bar 
+                key={dr.run_id} 
+                max={max} 
+                nodes={flatNodes} 
+                run={dr}
+                runs={gridRuns}
+                currentTaskIndex={currentTaskIndex}
+                currentRunIndex={currentRunIndex}
+                navigationMode={navigationMode}
+                isPreviewMode={isPreviewMode}
+                onNavigationModeChange={setNavigationMode}
+              />
             ))}
           </Flex>
           {selectedIsVisible === undefined || !selectedIsVisible ? undefined : (
@@ -128,6 +177,7 @@ export const Grid = ({ limit }: Props) => {
           )}
         </Flex>
       </Box>
-    </Flex>
+      </Flex>
+    </>
   );
 };

@@ -24,24 +24,58 @@ import type { LightGridTaskInstanceSummary } from "openapi/requests/types.gen";
 import { GridTI } from "./GridTI";
 import type { GridTask } from "./utils";
 
+type NavigationMode = "task" | "run" | "grid";
+
 type Props = {
   readonly depth?: number;
   readonly nodes: Array<GridTask>;
   readonly runId: string;
   readonly taskInstances: Array<LightGridTaskInstanceSummary>;
+  readonly currentTaskIndex?: number;
+  readonly currentRunIndex?: number;
+  readonly navigationMode?: NavigationMode;
+  readonly isPreviewMode?: boolean;
 };
 
-export const TaskInstancesColumn = ({ nodes, runId, taskInstances }: Props) => {
+export const TaskInstancesColumn = ({ 
+  nodes, 
+  runId, 
+  taskInstances,
+  currentTaskIndex = -1,
+  currentRunIndex = -1,
+  navigationMode = "grid",
+  isPreviewMode = false
+}: Props) => {
   const { dagId = "" } = useParams();
   const [searchParams] = useSearchParams();
   const search = searchParams.toString();
 
-  return nodes.map((node) => {
+  return nodes.map((node, index) => {
     // todo: how does this work with mapped? same task id for multiple tis
     const taskInstance = taskInstances.find((ti) => ti.task_id === node.id);
+    
+    const isCurrentCell = index === currentTaskIndex && navigationMode === "grid";
+    const isNavigationHighlighted = isCurrentCell;
+    const isPreviewHighlighted = isCurrentCell && isPreviewMode;
 
     if (!taskInstance) {
-      return <Box height="20px" key={`${node.id}-${runId}`} width="18px" />;
+      return (
+        <Box 
+          height="20px" 
+          key={`${node.id}-${runId}`} 
+          width="18px"
+          bg={
+            isNavigationHighlighted
+              ? isPreviewHighlighted
+                ? "yellow.muted"
+                : "blue.emphasized"
+              : undefined
+          }
+          borderWidth={isNavigationHighlighted ? 2 : 0}
+          borderColor={isPreviewHighlighted ? "yellow.solid" : "blue.solid"}
+          transition="all 0.2s"
+        />
+      );
     }
 
     return (
@@ -55,6 +89,8 @@ export const TaskInstancesColumn = ({ nodes, runId, taskInstances }: Props) => {
         search={search}
         state={taskInstance.state}
         taskId={node.id}
+        isNavigationHighlighted={isNavigationHighlighted}
+        isPreviewHighlighted={isPreviewHighlighted}
       />
     );
   });

@@ -39,6 +39,7 @@ type Props = {
   sourceFilters?: Array<string>;
   taskInstance?: TaskInstanceResponse;
   tryNumber?: number;
+  useStreaming?: boolean;
 };
 
 type ParseLogsProps = {
@@ -187,6 +188,7 @@ export const useLogs = (
     sourceFilters,
     taskInstance,
     tryNumber = 1,
+    useStreaming = true,
   }: Props,
   options?: Omit<UseQueryOptions<TaskInstancesLogResponse>, "queryFn" | "queryKey">,
 ) => {
@@ -195,7 +197,7 @@ export const useLogs = (
 
   const { data, ...rest } = useTaskInstanceServiceGetLog(
     {
-      accept,
+      accept: useStreaming ? "application/x-ndjson" : accept,
       dagId,
       dagRunId: taskInstance?.dag_run_id ?? "",
       mapIndex: taskInstance?.map_index ?? -1,

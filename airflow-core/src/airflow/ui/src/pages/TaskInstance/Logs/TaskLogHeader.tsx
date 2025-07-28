@@ -59,6 +59,10 @@ type Props = {
   readonly toggleWrap: () => void;
   readonly tryNumber?: number;
   readonly wrap: boolean;
+  readonly useStreaming?: boolean;
+  readonly toggleStreaming?: () => void;
+  readonly useCleanViewer?: boolean;
+  readonly toggleCleanViewer?: () => void;
 };
 
 export const TaskLogHeader = ({
@@ -76,6 +80,10 @@ export const TaskLogHeader = ({
   toggleWrap,
   tryNumber,
   wrap,
+  useStreaming = false,
+  toggleStreaming,
+  useCleanViewer = true,
+  toggleCleanViewer,
 }: Props) => {
   const { t: translate } = useTranslation(["common", "dag"]);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -234,6 +242,18 @@ export const TaskLogHeader = ({
                 <MdCode /> {showSource ? translate("source.hide") : translate("source.show")}
                 <Menu.ItemCommand>{translate("source.hotkey")}</Menu.ItemCommand>
               </Menu.Item>
+              {toggleStreaming && (
+                <Menu.Item onClick={toggleStreaming} value="streaming">
+                  🌊 {useStreaming ? translate("streaming.disable") : translate("streaming.enable")}
+                  <Menu.ItemCommand>r</Menu.ItemCommand>
+                </Menu.Item>
+              )}
+              {toggleCleanViewer && (
+                <Menu.Item onClick={toggleCleanViewer} value="cleanViewer">
+                  ✨ {useCleanViewer ? translate("cleanViewer.disable") : translate("cleanViewer.enable")}
+                  <Menu.ItemCommand>c</Menu.ItemCommand>
+                </Menu.Item>
+              )}
             </Menu.Content>
           </Menu.Root>
           {!isFullscreen && (

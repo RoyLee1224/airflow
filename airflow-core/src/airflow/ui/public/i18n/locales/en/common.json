@@ -243,6 +243,14 @@
     "hotkey": "t",
     "show": "Show Timestamps"
   },
+  "streaming": {
+    "disable": "Disable Streaming",
+    "enable": "Enable Streaming"
+  },
+  "cleanViewer": {
+    "disable": "Use Legacy Viewer",
+    "enable": "Use Clean Viewer"
+  },
   "timezone": "Timezone",
   "timezoneModal": {
     "current-timezone": "Current time in",

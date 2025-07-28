@@ -84,7 +84,11 @@ export const TaskLogContent = ({ error, isLoading, logError, parsedLogs, wrap }:
     count: parsedLogs.length,
     estimateSize: () => 20,
     getScrollElement: () => parentRef.current,
-    overscan: 10,
+    overscan: 20,
+    measureElement: (element) => {
+      // Force remeasurement when content changes to help with dynamic heights
+      return element?.getBoundingClientRect()?.height ?? 20;
+    },
   });
 
   const showScrollButtons = useMemo(() => {
@@ -100,9 +104,31 @@ export const TaskLogContent = ({ error, isLoading, logError, parsedLogs, wrap }:
     }
   }, [isLoading, rowVirtualizer, hash, parsedLogs]);
 
+  // Auto-scroll to bottom when new logs are added (for streaming)
+  useLayoutEffect(() => {
+    if (!isLoading && parsedLogs.length > 0 && !location.hash) {
+      // Only auto-scroll if user is near the bottom (within 5 items)
+      const scrollElement = rowVirtualizer.scrollElement;
+      if (scrollElement) {
+        const { scrollTop, scrollHeight, clientHeight } = scrollElement;
+        const isNearBottom = scrollTop + clientHeight >= scrollHeight - 200; // 200px threshold
+        
+        if (isNearBottom) {
+          setTimeout(() => {
+            rowVirtualizer.scrollToIndex(parsedLogs.length - 1, { align: 'end', behavior: 'smooth' });
+          }, 100);
+        }
+      }
+    }
+  }, [parsedLogs.length, isLoading, rowVirtualizer]);
+
   const handleScrollTo = (to: "bottom" | "top") => {
     if (parsedLogs.length > 0) {
-      rowVirtualizer.scrollToIndex(to === "bottom" ? parsedLogs.length - 1 : 0);
+      const targetIndex = to === "bottom" ? parsedLogs.length - 1 : 0;
+      rowVirtualizer.scrollToIndex(targetIndex, { 
+        align: to === "bottom" ? 'end' : 'start',
+        behavior: 'smooth'
+      });
     }
   };
 

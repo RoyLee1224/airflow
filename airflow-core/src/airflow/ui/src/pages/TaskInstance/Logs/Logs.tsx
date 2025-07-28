@@ -31,6 +31,7 @@ import { useLogs } from "src/queries/useLogs";
 
 import { ExternalLogLink } from "./ExternalLogLink";
 import { TaskLogContent } from "./TaskLogContent";
+import { TaskLogContentClean } from "./TaskLogContentClean";
 import { TaskLogHeader } from "./TaskLogHeader";
 
 export const Logs = () => {
@@ -75,18 +76,24 @@ export const Logs = () => {
   const [showSource, setShowSource] = useLocalStorage<boolean>("log_show_source", true);
   const [fullscreen, setFullscreen] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [useStreaming, setUseStreaming] = useLocalStorage<boolean>("log_use_streaming", false);
+  const [useCleanViewer, setUseCleanViewer] = useLocalStorage<boolean>("log_use_clean_viewer", true);
 
   const toggleWrap = () => setWrap(!wrap);
   const toggleTimestamp = () => setShowTimestamp(!showTimestamp);
   const toggleSource = () => setShowSource(!showSource);
   const toggleFullscreen = () => setFullscreen(!fullscreen);
   const toggleExpanded = () => setExpanded((act) => !act);
+  const toggleStreaming = () => setUseStreaming(!useStreaming);
+  const toggleCleanViewer = () => setUseCleanViewer(!useCleanViewer);
 
   useHotkeys("w", toggleWrap);
   useHotkeys("f", toggleFullscreen);
   useHotkeys("e", toggleExpanded);
   useHotkeys("t", toggleTimestamp);
   useHotkeys("s", toggleSource);
+  useHotkeys("r", toggleStreaming);
+  useHotkeys("c", toggleCleanViewer);
 
   const onOpenChange = () => {
     setFullscreen(false);
@@ -105,6 +112,7 @@ export const Logs = () => {
     sourceFilters,
     taskInstance,
     tryNumber,
+    useStreaming,
   });
 
   const externalLogName = useConfig("external_log_name") as string;
@@ -126,6 +134,10 @@ export const Logs = () => {
         toggleWrap={toggleWrap}
         tryNumber={tryNumber}
         wrap={wrap}
+        useStreaming={useStreaming}
+        toggleStreaming={toggleStreaming}
+        useCleanViewer={useCleanViewer}
+        toggleCleanViewer={toggleCleanViewer}
       />
       {showExternalLogRedirect && externalLogName && taskInstance ? (
         tryNumber === undefined ? (
@@ -138,13 +150,23 @@ export const Logs = () => {
           />
         )
       ) : undefined}
-      <TaskLogContent
-        error={error}
-        isLoading={isLoading || isLoadingLogs}
-        logError={logError}
-        parsedLogs={data.parsedLogs ?? []}
-        wrap={wrap}
-      />
+      {useCleanViewer ? (
+        <TaskLogContentClean
+          error={error}
+          isLoading={isLoading || isLoadingLogs}
+          logError={logError}
+          parsedLogs={data.parsedLogs ?? []}
+          wrap={wrap}
+        />
+      ) : (
+        <TaskLogContent
+          error={error}
+          isLoading={isLoading || isLoadingLogs}
+          logError={logError}
+          parsedLogs={data.parsedLogs ?? []}
+          wrap={wrap}
+        />
+      )}
       <Dialog.Root onOpenChange={onOpenChange} open={fullscreen} scrollBehavior="inside" size="full">
         <Dialog.Content backdrop>
           <Dialog.Header>
@@ -156,6 +178,7 @@ export const Logs = () => {
                 onSelectTryNumber={onSelectTryNumber}
                 showSource={showSource}
                 showTimestamp={showTimestamp}
+                sourceOptions={data.sources}
                 taskInstance={taskInstance}
                 toggleExpanded={toggleExpanded}
                 toggleFullscreen={toggleFullscreen}
@@ -164,6 +187,10 @@ export const Logs = () => {
                 toggleWrap={toggleWrap}
                 tryNumber={tryNumber}
                 wrap={wrap}
+                useStreaming={useStreaming}
+                toggleStreaming={toggleStreaming}
+                useCleanViewer={useCleanViewer}
+                toggleCleanViewer={toggleCleanViewer}
               />
             </VStack>
           </Dialog.Header>
@@ -171,13 +198,23 @@ export const Logs = () => {
           <Dialog.CloseTrigger />
 
           <Dialog.Body display="flex" flexDirection="column">
-            <TaskLogContent
-              error={error}
-              isLoading={isLoading || isLoadingLogs}
-              logError={logError}
-              parsedLogs={data.parsedLogs ?? []}
-              wrap={wrap}
-            />
+            {useCleanViewer ? (
+              <TaskLogContentClean
+                error={error}
+                isLoading={isLoading || isLoadingLogs}
+                logError={logError}
+                parsedLogs={data.parsedLogs ?? []}
+                wrap={wrap}
+              />
+            ) : (
+              <TaskLogContent
+                error={error}
+                isLoading={isLoading || isLoadingLogs}
+                logError={logError}
+                parsedLogs={data.parsedLogs ?? []}
+                wrap={wrap}
+              />
+            )}
           </Dialog.Body>
         </Dialog.Content>
       </Dialog.Root>

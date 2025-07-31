@@ -15,11 +15,13 @@
       "favorite": "Favorite",
       "unfavorite": "Unfavorite"
     },
+    "maxActiveRunsFilter": "Max Active Runs",
     "paused": {
       "active": "Active",
       "all": "All",
       "paused": "Paused"
     },
+    "reprocessBehaviorFilter": "Filter By Reprocess Behavior",
     "runIdPatternFilter": "Search Dag Runs"
   },
   "ownerLink": "Owner link for {{owner}}",

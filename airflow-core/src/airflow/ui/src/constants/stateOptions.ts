@@ -61,3 +61,22 @@ export const dagRunTypeOptions = createListCollection({
     { label: "common:runTypes.asset_triggered", value: "asset_triggered" },
   ],
 });
+
+export const backfillStatusOptions = createListCollection({
+  items: [
+    { label: "dags:filters.allStates", value: "all" },
+    { label: "common:states.running", value: "running" },
+    { label: "common:states.completed", value: "completed" },
+    { label: "common:states.failed", value: "failed" },
+    { label: "common:states.paused", value: "paused" },
+  ],
+});
+
+export const backfillReprocessBehaviorOptions = createListCollection({
+  items: [
+    { label: "dags:filters.allBehaviors", value: "all" },
+    { label: "backfill.missingRuns", value: "none" },
+    { label: "backfill.missingAndErroredRuns", value: "failed" },
+    { label: "backfill.allRuns", value: "all_runs" },
+  ],
+});

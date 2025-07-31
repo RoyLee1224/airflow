@@ -151,10 +151,12 @@
   "startDate": "開始日期",
   "state": "狀態",
   "states": {
+    "completed": "已完成",
     "deferred": "已延後",
     "failed": "失敗",
     "no_status": "無狀態",
     "none": "無狀態",
+    "paused": "已暫停",
     "queued": "排隊中",
     "removed": "已移除",
     "restarting": "重啟中",

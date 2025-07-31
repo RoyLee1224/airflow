@@ -165,10 +165,12 @@
   "startDate": "Start Date",
   "state": "State",
   "states": {
+    "completed": "Completed",
     "deferred": "Deferred",
     "failed": "Failed",
     "no_status": "No Status",
     "none": "No Status",
+    "paused": "Paused",
     "queued": "Queued",
     "removed": "Removed",
     "restarting": "Restarting",

@@ -1,5 +1,3 @@
- 
-
 /*!
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -31,8 +29,8 @@ import { useTableURLState } from "src/components/DataTable/useTableUrlState";
 import { ErrorAlert } from "src/components/ErrorAlert";
 import { SearchBar } from "src/components/SearchBar";
 import { StateBadge } from "src/components/StateBadge";
-import { Select } from "src/components/ui";
 import Time from "src/components/Time";
+import { Select } from "src/components/ui";
 import { SearchParamsKeys, type SearchParamsKeysType } from "src/constants/searchParams";
 import { backfillStatusOptions, backfillReprocessBehaviorOptions } from "src/constants/stateOptions";
 import { getDuration } from "src/utils";
@@ -213,9 +211,7 @@ export const Backfills = () => {
                 filteredState === null ? (
                   translate("dags:filters.allStates")
                 ) : (
-                  <StateBadge state={filteredState}>
-                    {translate(`common:states.${filteredState}`)}
-                  </StateBadge>
+                  <StateBadge state={filteredState}>{translate(`common:states.${filteredState}`)}</StateBadge>
                 )
               }
             </Select.ValueText>
@@ -239,7 +235,11 @@ export const Backfills = () => {
           onValueChange={handleReprocessBehaviorChange}
           value={[filteredReprocessBehavior ?? "all"]}
         >
-          <Select.Trigger colorPalette="blue" isActive={Boolean(filteredReprocessBehavior)} minW="max-content">
+          <Select.Trigger
+            colorPalette="blue"
+            isActive={Boolean(filteredReprocessBehavior)}
+            minW="max-content"
+          >
             <Select.ValueText width="auto">
               {() =>
                 filteredReprocessBehavior === null

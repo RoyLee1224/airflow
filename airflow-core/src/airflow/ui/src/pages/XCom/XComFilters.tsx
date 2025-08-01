@@ -128,7 +128,7 @@ export const XComFilters = ({ filters, onFiltersChange }: XComFiltersProps) => {
   const renderFilterValue = (filter: XComFilter) => {
     if (filter.operator === "date_range") {
       const [start, end] = Array.isArray(filter.value) ? filter.value : ["", ""];
-      
+
       return (
         <HStack>
           <Input
@@ -175,7 +175,7 @@ export const XComFilters = ({ filters, onFiltersChange }: XComFiltersProps) => {
               {t("browse:xcom.filters.addFilter")}
             </Button>
           </Menu.Trigger>
-          
+
           <Menu.Content>
             <Menu.ItemGroup>
               <Menu.ItemGroupLabel>
@@ -197,7 +197,7 @@ export const XComFilters = ({ filters, onFiltersChange }: XComFiltersProps) => {
             </Menu.ItemGroup>
           </Menu.Content>
         </Menu.Root>
-        
+
         {filters.length > 0 && (
           <Badge colorPalette="blue" size="sm">
             {filters.length} {filters.length === 1 ? t("common:filter") : t("common:filters")}
@@ -208,7 +208,7 @@ export const XComFilters = ({ filters, onFiltersChange }: XComFiltersProps) => {
       <VStack align="stretch" gap={2}>
         {filters.map((filter) => {
           const Icon = getFieldIcon(filter.field);
-          
+
           return (
             <HStack
               key={filter.id}

@@ -18,6 +18,20 @@
       "key": "Key",
       "value": "Value"
     },
+    "filters": {
+      "addFilter": "Add Filter",
+      "clearAllFilters": "Clear all filters",
+      "dagIdPlaceholder": "Filter by DAG ID...",
+      "enterValue": "Enter {{field}}...",
+      "filterBy": "Filter by...",
+      "keyPlaceholder": "Filter by XCom key...",
+      "logicalDateRange": "Logical Date Range",
+      "runIdPlaceholder": "Filter by Run ID...",
+      "taskIdPlaceholder": "Filter by Task ID...",
+      "valueMatch": "Value Content",
+      "valueMatchHint": "Search for text content within XCom values. Large values may be truncated.",
+      "valueMatchPlaceholder": "Search in XCom values..."
+    },
     "title": "XCom"
   }
 }

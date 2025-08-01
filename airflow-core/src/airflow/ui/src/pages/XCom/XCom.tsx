@@ -18,6 +18,7 @@
  */
 import { Box, Heading, Link } from "@chakra-ui/react";
 import type { ColumnDef } from "@tanstack/react-table";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link as RouterLink, useParams } from "react-router-dom";
 
@@ -30,6 +31,7 @@ import { TruncatedText } from "src/components/TruncatedText";
 import { getTaskInstanceLinkFromObj } from "src/utils/links";
 
 import { XComEntry } from "./XComEntry";
+import { XComFilters, type XComFilter } from "./XComFilters";
 
 const columns = (translate: (key: string) => string): Array<ColumnDef<XComResponse>> => [
   {
@@ -103,6 +105,7 @@ export const XCom = () => {
   const { t: translate } = useTranslation(["browse", "common"]);
   const { setTableURLState, tableURLState } = useTableURLState();
   const { pagination } = tableURLState;
+  const [filters, setFilters] = useState<XComFilter[]>([]);
 
   const { data, error, isFetching, isLoading } = useXcomServiceGetXcomEntries(
     {
@@ -122,6 +125,7 @@ export const XCom = () => {
       {dagId === "~" && runId === "~" && taskId === "~" ? (
         <Heading size="md">{translate("xcom.title")}</Heading>
       ) : undefined}
+      <XComFilters filters={filters} onFiltersChange={setFilters} />
       <ErrorAlert error={error} />
       <DataTable
         columns={columns(translate)}

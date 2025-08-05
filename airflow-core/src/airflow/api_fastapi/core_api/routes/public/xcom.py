@@ -17,7 +17,10 @@
 from __future__ import annotations
 
 import copy
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
+
+if TYPE_CHECKING:
+    from airflow.api_fastapi.core_api.base import OrmClause
 
 from fastapi import Depends, HTTPException, Query, status
 from sqlalchemy import and_, select
@@ -145,23 +148,35 @@ def get_xcom_entries(
 
     This endpoint allows specifying `~` as the dag_id, dag_run_id, task_id to retrieve XCom entries for all DAGs.
     """
-    query = select(XComModel)
-    if dag_id != "~":
-        query = query.where(XComModel.dag_id == dag_id)
-    query = query.join(DR, and_(XComModel.dag_id == DR.dag_id, XComModel.run_id == DR.run_id)).options(
-        joinedload(XComModel.dag_run).joinedload(DR.dag_model)
+    query = (
+        select(XComModel)
+        .join(DR, and_(XComModel.dag_id == DR.dag_id, XComModel.run_id == DR.run_id))
+        .options(joinedload(XComModel.dag_run).joinedload(DR.dag_model))
     )
 
-    if task_id != "~":
+    filters: list[OrmClause] = [
+        readable_xcom_filter,
+        xcom_key_pattern,
+        dag_id_pattern,
+        run_id_pattern,
+        task_id_pattern,
+    ]
+
+    if not dag_id_pattern.value and dag_id != "~":
+        query = query.where(XComModel.dag_id == dag_id)
+
+    if not run_id_pattern.value and dag_run_id != "~":
+        query = query.where(XComModel.run_id == dag_run_id)
+
+    if not task_id_pattern.value and task_id != "~":
         query = query.where(XComModel.task_id == task_id)
-    if dag_run_id != "~":
-        query = query.where(DR.run_id == dag_run_id)
+
     if map_index is not None:
         query = query.where(XComModel.map_index == map_index)
 
     query, total_entries = paginated_select(
         statement=query,
-        filters=[readable_xcom_filter, xcom_key_pattern, dag_id_pattern, run_id_pattern, task_id_pattern],
+        filters=filters,
         offset=offset,
         limit=limit,
         session=session,

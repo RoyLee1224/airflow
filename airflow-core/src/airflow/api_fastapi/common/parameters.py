@@ -525,6 +525,10 @@ class RangeFilter(BaseParam[Range]):
         if self.skip_none is False:
             raise ValueError(f"Cannot set 'skip_none' to False on a {type(self)}")
 
+        # If skip_none=True and filter is not active, skip applying the filter
+        if self.skip_none and not self.is_active():
+            return select
+
         if self.value and self.value.lower_bound:
             select = select.where(self.attribute >= self.value.lower_bound)
         if self.value and self.value.upper_bound:

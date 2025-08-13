@@ -23,6 +23,7 @@
       }
     },
     "noData": "No data available",
+    "showTotal": "Show Total",
     "week": "Week {{weekNumber}}"
   },
   "code": {

@@ -47,10 +47,18 @@ import { useDelayedTooltip } from "./useDelayedTooltip";
 type Props = {
   readonly cellSize: number;
   readonly data: Array<CalendarTimeRangeResponse>;
+  readonly numberFilter?: number;
   readonly selectedYear: number;
+  readonly showNumbers?: boolean;
 };
 
-export const DailyCalendarView = ({ cellSize, data, selectedYear }: Props) => {
+export const DailyCalendarView = ({
+  cellSize,
+  data,
+  numberFilter = 1,
+  selectedYear,
+  showNumbers = true,
+}: Props) => {
   const dailyData = generateDailyCalendarData(data, selectedYear);
   const { handleMouseEnter, handleMouseLeave } = useDelayedTooltip();
 
@@ -101,6 +109,9 @@ export const DailyCalendarView = ({ cellSize, data, selectedYear }: Props) => {
                   );
                 }
 
+                const totalRuns = day.counts.total;
+                const fontSize = cellSize >= 20 ? "xs" : cellSize >= 16 ? "2xs" : "1xs";
+
                 return (
                   <Box
                     key={day.date}
@@ -110,12 +121,27 @@ export const DailyCalendarView = ({ cellSize, data, selectedYear }: Props) => {
                   >
                     <Box
                       _hover={{ transform: "scale(1.1)" }}
+                      alignItems="center"
                       bg={getCalendarCellColor(day.runs)}
                       borderRadius="2px"
                       cursor="pointer"
+                      display="flex"
                       height={`${cellSize}px`}
+                      justifyContent="center"
                       width={`${cellSize}px`}
-                    />
+                    >
+                      {showNumbers && totalRuns >= numberFilter ? (
+                        <Text
+                          color="white"
+                          fontSize={fontSize}
+                          fontWeight="semibold"
+                          lineHeight="1"
+                          textShadow="0 1px 2px rgba(0,0,0,0.5)"
+                        >
+                          {totalRuns}
+                        </Text>
+                      ) : undefined}
+                    </Box>
                     <CalendarTooltip cellSize={cellSize} content={createTooltipContent(day)} />
                   </Box>
                 );

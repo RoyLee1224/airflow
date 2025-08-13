@@ -51,11 +51,20 @@ dayjs.extend(isSameOrBefore);
 type Props = {
   readonly cellSize: number;
   readonly data: Array<CalendarTimeRangeResponse>;
+  readonly numberFilter?: number;
   readonly selectedMonth: number;
   readonly selectedYear: number;
+  readonly showNumbers?: boolean;
 };
 
-export const HourlyCalendarView = ({ cellSize, data, selectedMonth, selectedYear }: Props) => {
+export const HourlyCalendarView = ({
+  cellSize,
+  data,
+  numberFilter = 1,
+  selectedMonth,
+  selectedYear,
+  showNumbers = true,
+}: Props) => {
   const { t: translate } = useTranslation("dag");
   const hourlyData = generateHourlyCalendarData(data, selectedYear, selectedMonth);
   const { handleMouseEnter, handleMouseLeave } = useDelayedTooltip();
@@ -169,10 +178,13 @@ export const HourlyCalendarView = ({ cellSize, data, selectedMonth, selectedYear
                       position="relative"
                     >
                       <Box
+                        alignItems="center"
                         bg={getCalendarCellColor([])}
                         borderRadius="2px"
                         cursor="pointer"
+                        display="flex"
                         height={`${cellSize}px`}
+                        justifyContent="center"
                         marginRight={index % 7 === 6 ? "8px" : "0"}
                         width={`${cellSize}px`}
                       />
@@ -186,6 +198,9 @@ export const HourlyCalendarView = ({ cellSize, data, selectedMonth, selectedYear
                     ? `${dayjs(day.day).format("MMM DD")}, ${hour.toString().padStart(2, "0")}:00 - ${createTooltipContent(hourData).split(": ")[1]}`
                     : `${dayjs(day.day).format("MMM DD")}, ${hour.toString().padStart(2, "0")}:00 - No runs`;
 
+                const totalRuns = hourData.counts.total;
+                const fontSize = cellSize >= 20 ? "xs" : cellSize >= 16 ? "2xs" : "1xs";
+
                 return (
                   <Box
                     key={`${day.day}-${hour}`}
@@ -194,13 +209,28 @@ export const HourlyCalendarView = ({ cellSize, data, selectedMonth, selectedYear
                     position="relative"
                   >
                     <Box
+                      alignItems="center"
                       bg={getCalendarCellColor(hourData.runs)}
                       borderRadius="2px"
                       cursor="pointer"
+                      display="flex"
                       height={`${cellSize}px`}
+                      justifyContent="center"
                       marginRight={index % 7 === 6 ? "8px" : "0"}
                       width={`${cellSize}px`}
-                    />
+                    >
+                      {showNumbers && totalRuns >= numberFilter ? (
+                        <Text
+                          color="white"
+                          fontSize={fontSize}
+                          fontWeight="semibold"
+                          lineHeight="1"
+                          textShadow="0 1px 2px rgba(0,0,0,0.5)"
+                        >
+                          {totalRuns}
+                        </Text>
+                      ) : undefined}
+                    </Box>
                     <CalendarTooltip cellSize={cellSize} content={tooltipContent} />
                   </Box>
                 );

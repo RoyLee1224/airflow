@@ -1,3 +1,5 @@
+/* eslint-disable max-lines */
+
 /*!
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -21,7 +23,7 @@ import { keyframes } from "@emotion/react";
 import dayjs from "dayjs";
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { FiMinus, FiPlus, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { FiMinus, FiPlus, FiChevronLeft, FiChevronRight, FiHash } from "react-icons/fi";
 import { useParams } from "react-router-dom";
 import { useLocalStorage } from "usehooks-ts";
 
@@ -31,6 +33,7 @@ import { ErrorAlert } from "src/components/ErrorAlert";
 import { CalendarLegend } from "./CalendarLegend";
 import { DailyCalendarView } from "./DailyCalendarView";
 import { HourlyCalendarView } from "./HourlyCalendarView";
+import { NumberFilterControl } from "./NumberFilterControl";
 
 const spin = keyframes`
   from { transform: rotate(0deg); }
@@ -43,6 +46,8 @@ export const Calendar = () => {
   const [cellSize, setCellSize] = useLocalStorage("calendar-cell-size", 18);
   const [selectedDate, setSelectedDate] = useState(dayjs());
   const [granularity, setGranularity] = useLocalStorage<"daily" | "hourly">("calendar-granularity", "daily");
+  const [showNumbers, setShowNumbers] = useLocalStorage("calendar-show-numbers", true);
+  const [numberFilter, setNumberFilter] = useLocalStorage("calendar-number-filter", 1);
 
   const currentDate = dayjs();
 
@@ -175,22 +180,42 @@ export const Calendar = () => {
             </HStack>
           )}
 
-          <ButtonGroup attached size="sm" variant="outline">
+          <HStack gap={2}>
+            <ButtonGroup attached size="sm" variant="outline">
+              <Button
+                colorPalette="blue"
+                onClick={() => setGranularity("daily")}
+                variant={granularity === "daily" ? "solid" : "outline"}
+              >
+                {translate("calendar.daily")}
+              </Button>
+              <Button
+                colorPalette="blue"
+                onClick={() => setGranularity("hourly")}
+                variant={granularity === "hourly" ? "solid" : "outline"}
+              >
+                {translate("calendar.hourly")}
+              </Button>
+            </ButtonGroup>
+
             <Button
               colorPalette="blue"
-              onClick={() => setGranularity("daily")}
-              variant={granularity === "daily" ? "solid" : "outline"}
+              onClick={() => setShowNumbers(!showNumbers)}
+              size="sm"
+              variant={showNumbers ? "solid" : "outline"}
             >
-              {translate("calendar.daily")}
+              <HStack gap={1}>
+                <FiHash />
+                <Text>{translate("calendar.showTotal")}</Text>
+              </HStack>
             </Button>
-            <Button
-              colorPalette="blue"
-              onClick={() => setGranularity("hourly")}
-              variant={granularity === "hourly" ? "solid" : "outline"}
-            >
-              {translate("calendar.hourly")}
-            </Button>
-          </ButtonGroup>
+
+            <NumberFilterControl
+              numberFilter={numberFilter}
+              onFilterChange={setNumberFilter}
+              showNumbers={showNumbers}
+            />
+          </HStack>
         </HStack>
 
         <HStack gap={2}>
@@ -255,7 +280,9 @@ export const Calendar = () => {
             <DailyCalendarView
               cellSize={cellSize}
               data={data?.dag_runs ?? []}
+              numberFilter={numberFilter}
               selectedYear={selectedDate.year()}
+              showNumbers={showNumbers}
             />
             <CalendarLegend />
           </>
@@ -265,8 +292,10 @@ export const Calendar = () => {
               <HourlyCalendarView
                 cellSize={cellSize}
                 data={data?.dag_runs ?? []}
+                numberFilter={numberFilter}
                 selectedMonth={selectedDate.month()}
                 selectedYear={selectedDate.year()}
+                showNumbers={showNumbers}
               />
             </Box>
             <Box display="flex" flex="1" justifyContent="center" pt={16}>

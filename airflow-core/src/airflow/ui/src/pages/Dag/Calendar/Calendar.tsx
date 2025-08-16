@@ -23,17 +23,19 @@ import { keyframes } from "@emotion/react";
 import dayjs from "dayjs";
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { FiMinus, FiPlus, FiChevronLeft, FiChevronRight, FiHash } from "react-icons/fi";
+import { FiMinus, FiPlus, FiChevronLeft, FiChevronRight, FiHash, FiX } from "react-icons/fi";
 import { useParams } from "react-router-dom";
 import { useLocalStorage } from "usehooks-ts";
 
 import { useCalendarServiceGetCalendar } from "openapi/queries";
 import { ErrorAlert } from "src/components/ErrorAlert";
+import mockCalendarData from "../../../../../../../../files/mock_calendar_data.json";
 
 import { CalendarLegend } from "./CalendarLegend";
 import { DailyCalendarView } from "./DailyCalendarView";
 import { HourlyCalendarView } from "./HourlyCalendarView";
-import { NumberFilterControl } from "./NumberFilterControl";
+import { NumberFilterControl, type FilterOperator } from "./NumberFilterControl";
+import type { LegendFilter } from "./CalendarLegend";
 
 const spin = keyframes`
   from { transform: rotate(0deg); }
@@ -47,7 +49,10 @@ export const Calendar = () => {
   const [selectedDate, setSelectedDate] = useState(dayjs());
   const [granularity, setGranularity] = useLocalStorage<"daily" | "hourly">("calendar-granularity", "daily");
   const [showNumbers, setShowNumbers] = useLocalStorage("calendar-show-numbers", true);
-  const [numberFilter, setNumberFilter] = useLocalStorage("calendar-number-filter", 1);
+  const [numberFilter, setNumberFilter] = useLocalStorage("calendar-number-filter", 0);
+  const [filterOperator, setFilterOperator] = useLocalStorage<FilterOperator>("calendar-filter-operator", ">");
+  const [filterEnabled, setFilterEnabled] = useLocalStorage("calendar-filter-enabled", false);
+  const [legendFilter, setLegendFilter] = useLocalStorage<LegendFilter>("calendar-legend-filter", "all");
 
   const currentDate = dayjs();
 
@@ -71,15 +76,40 @@ export const Calendar = () => {
     }
   }, [granularity, selectedDate]);
 
-  const { data, error, isLoading } = useCalendarServiceGetCalendar(
+  const USE_MOCK_DATA = true;
+
+  const { data: realData, error, isLoading } = useCalendarServiceGetCalendar(
     {
       dagId,
       granularity,
       ...dateRange,
     },
     undefined,
-    { enabled: Boolean(dagId) },
+    { enabled: Boolean(dagId) && !USE_MOCK_DATA },
   );
+
+  const data = USE_MOCK_DATA ? mockCalendarData : realData;
+
+  // Check if any filters are active and count them
+  const getActiveFiltersCount = () => {
+    let count = 0;
+
+    if (filterEnabled) {count++;}
+    if (legendFilter !== "all") {count++;}
+
+    return count;
+  };
+
+  const activeFiltersCount = getActiveFiltersCount();
+  const hasActiveFilters = activeFiltersCount > 0;
+
+  // Reset all filters
+  const resetFilters = () => {
+    setFilterEnabled(false);
+    setLegendFilter("all");
+    setNumberFilter(0);
+    setFilterOperator(">");
+  };
 
   if (!data && !isLoading) {
     return (
@@ -211,10 +241,40 @@ export const Calendar = () => {
             </Button>
 
             <NumberFilterControl
+              filterEnabled={filterEnabled}
+              filterOperator={filterOperator}
               numberFilter={numberFilter}
               onFilterChange={setNumberFilter}
+              onFilterEnabledChange={setFilterEnabled}
+              onOperatorChange={setFilterOperator}
               showNumbers={showNumbers}
             />
+
+            {hasActiveFilters ? <Button
+                colorPalette="gray"
+                onClick={resetFilters}
+                size="sm"
+                variant="outline"
+              >
+                <HStack gap={1}>
+                  <FiX />
+                  <Text>Reset Filters</Text>
+                  {activeFiltersCount > 1 && (
+                    <Box
+                      bg="gray.100"
+                      borderRadius="full"
+                      color="gray.700"
+                      fontSize="xs"
+                      fontWeight="semibold"
+                      minWidth="20px"
+                      px={1}
+                      textAlign="center"
+                    >
+                      {activeFiltersCount}
+                    </Box>
+                  )}
+                </HStack>
+              </Button> : null}
           </HStack>
         </HStack>
 
@@ -280,11 +340,17 @@ export const Calendar = () => {
             <DailyCalendarView
               cellSize={cellSize}
               data={data?.dag_runs ?? []}
+              filterEnabled={filterEnabled}
+              filterOperator={filterOperator}
+              legendFilter={legendFilter}
               numberFilter={numberFilter}
               selectedYear={selectedDate.year()}
               showNumbers={showNumbers}
             />
-            <CalendarLegend />
+            <CalendarLegend
+              onFilterChange={setLegendFilter}
+              selectedFilter={legendFilter}
+            />
           </>
         ) : (
           <HStack align="start" gap={2}>
@@ -292,6 +358,9 @@ export const Calendar = () => {
               <HourlyCalendarView
                 cellSize={cellSize}
                 data={data?.dag_runs ?? []}
+                filterEnabled={filterEnabled}
+                filterOperator={filterOperator}
+                legendFilter={legendFilter}
                 numberFilter={numberFilter}
                 selectedMonth={selectedDate.month()}
                 selectedYear={selectedDate.year()}
@@ -299,7 +368,11 @@ export const Calendar = () => {
               />
             </Box>
             <Box display="flex" flex="1" justifyContent="center" pt={16}>
-              <CalendarLegend vertical />
+              <CalendarLegend
+                onFilterChange={setLegendFilter}
+                selectedFilter={legendFilter}
+                vertical
+              />
             </Box>
           </HStack>
         )}

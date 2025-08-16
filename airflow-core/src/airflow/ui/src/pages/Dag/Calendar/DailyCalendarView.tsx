@@ -42,11 +42,16 @@ import type { CalendarTimeRangeResponse } from "openapi/requests/types.gen";
 
 import { CalendarTooltip } from "./CalendarTooltip";
 import { createTooltipContent, generateDailyCalendarData, getCalendarCellColor } from "./calendarUtils";
+import type { FilterOperator } from "./NumberFilterControl";
+import type { LegendFilter } from "./CalendarLegend";
 import { useDelayedTooltip } from "./useDelayedTooltip";
 
 type Props = {
   readonly cellSize: number;
   readonly data: Array<CalendarTimeRangeResponse>;
+  readonly filterEnabled?: boolean;
+  readonly filterOperator?: FilterOperator;
+  readonly legendFilter?: LegendFilter;
   readonly numberFilter?: number;
   readonly selectedYear: number;
   readonly showNumbers?: boolean;
@@ -55,12 +60,94 @@ type Props = {
 export const DailyCalendarView = ({
   cellSize,
   data,
-  numberFilter = 1,
+  filterEnabled = false,
+  filterOperator = ">",
+  legendFilter = "all",
+  numberFilter = 0,
   selectedYear,
   showNumbers = true,
 }: Props) => {
   const dailyData = generateDailyCalendarData(data, selectedYear);
   const { handleMouseEnter, handleMouseLeave } = useDelayedTooltip();
+
+  const shouldShowNumber = (totalRuns: number): boolean => {
+    if (!showNumbers) {return false;}
+
+    switch (filterOperator) {
+      case "<":
+        return totalRuns < numberFilter;
+      case "=":
+        return totalRuns === numberFilter;
+      case ">":
+        return totalRuns > numberFilter;
+      default:
+        return totalRuns >= numberFilter;
+    }
+  };
+
+  const shouldShowCell = (totalRuns: number): boolean => {
+    if (!filterEnabled) {return true;}
+
+    switch (filterOperator) {
+      case "<":
+        return totalRuns < numberFilter;
+      case "=":
+        return totalRuns === numberFilter;
+      case ">":
+        return totalRuns > numberFilter;
+      default:
+        return totalRuns >= numberFilter;
+    }
+  };
+
+  const matchesLegendFilter = (runs: Array<CalendarTimeRangeResponse>): boolean => {
+    if (legendFilter === "all") {return true;}
+    if (runs.length === 0) {return legendFilter === "gray";}
+
+    const counts = { failed: 0, planned: 0, queued: 0, running: 0, success: 0, total: 0 };
+
+    runs.forEach((run) => {
+      const { count, state } = run;
+
+      if (state in counts) {
+        counts[state] += count;
+      }
+      counts.total += count;
+    });
+
+    // Check priority states first (same logic as getCalendarCellColor)
+    if (counts.queued > 0 && legendFilter === "queued.600") {return true;}
+    if (counts.running > 0 && legendFilter === "blue.400") {return true;}
+    if (counts.planned > 0 && legendFilter === "scheduled") {return true;}
+
+    // If there are priority states but user selected a success rate filter, don't match
+    if ((counts.queued > 0 || counts.running > 0 || counts.planned > 0) &&
+        ["failed.600", "success.400", "success.500", "success.600", "up_for_retry.500", "upstream_failed.500"].includes(legendFilter)) {
+      return false;
+    }
+
+    // Check success rate rules
+    if (counts.total > 0) {
+      const successRate = counts.success / counts.total;
+
+      if (legendFilter === "success.600" && successRate === 1) {return true;}
+      if (legendFilter === "success.500" && successRate >= 0.8 && successRate < 1) {return true;}
+      if (legendFilter === "success.400" && successRate >= 0.6 && successRate < 0.8) {return true;}
+      if (legendFilter === "up_for_retry.500" && successRate >= 0.4 && successRate < 0.6) {return true;}
+      if (legendFilter === "upstream_failed.500" && successRate >= 0.2 && successRate < 0.4) {return true;}
+
+      if (counts.failed > 0 && successRate < 0.2) {
+        return legendFilter === "failed.600";
+      }
+    }
+
+    // Gray for no data
+    if (counts.total === 0) {
+      return legendFilter === "gray";
+    }
+
+    return false;
+  };
 
   return (
     <Box mb={4}>
@@ -111,6 +198,10 @@ export const DailyCalendarView = ({
 
                 const totalRuns = day.counts.total;
                 const fontSize = cellSize >= 20 ? "xs" : cellSize >= 16 ? "2xs" : "1xs";
+                const cellColor = getCalendarCellColor(day.runs);
+                const matchesNumberFilter = shouldShowCell(totalRuns);
+                const matchesLegend = matchesLegendFilter(day.runs);
+                const shouldHighlight = matchesNumberFilter && matchesLegend;
 
                 return (
                   <Box
@@ -120,17 +211,18 @@ export const DailyCalendarView = ({
                     position="relative"
                   >
                     <Box
-                      _hover={{ transform: "scale(1.1)" }}
+                      _hover={{ transform: shouldHighlight ? "scale(1.1)" : "scale(1.02)" }}
                       alignItems="center"
-                      bg={getCalendarCellColor(day.runs)}
+                      bg={cellColor}
                       borderRadius="2px"
                       cursor="pointer"
                       display="flex"
                       height={`${cellSize}px`}
                       justifyContent="center"
+                      opacity={shouldHighlight ? 1 : 0.3}
                       width={`${cellSize}px`}
                     >
-                      {showNumbers && totalRuns >= numberFilter ? (
+                      {shouldShowNumber(totalRuns) ? (
                         <Text
                           color="white"
                           fontSize={fontSize}

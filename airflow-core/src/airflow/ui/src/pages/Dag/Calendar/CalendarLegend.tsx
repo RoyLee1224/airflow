@@ -21,52 +21,69 @@ import { useTranslation } from "react-i18next";
 
 import { Tooltip } from "src/components/ui";
 
+export type LegendFilter = "all" | "blue.400" | "failed.600" | "gray" | "queued.600" | "scheduled" | "success.400" | "success.500" | "success.600" | "up_for_retry.500" | "upstream_failed.500";
+
 type Props = {
+  readonly onFilterChange?: (filter: LegendFilter) => void;
+  readonly selectedFilter?: LegendFilter;
   readonly vertical?: boolean;
 };
 
 const spectrumLegendData = [
   {
     color: "success.600",
+    filterKey: "success.600" as LegendFilter,
     size: { height: "20px", width: "32px" },
     tooltipKey: "calendar.legend.tooltips.success100",
   },
   {
     color: "success.500",
+    filterKey: "success.500" as LegendFilter,
     size: { height: "20px", width: "24px" },
     tooltipKey: "calendar.legend.tooltips.successRate80",
   },
   {
     color: "success.400",
+    filterKey: "success.400" as LegendFilter,
     size: { height: "20px", width: "24px" },
     tooltipKey: "calendar.legend.tooltips.successRate60",
   },
   {
     color: "up_for_retry.500",
+    filterKey: "up_for_retry.500" as LegendFilter,
     size: { height: "20px", width: "24px" },
     tooltipKey: "calendar.legend.tooltips.successRate40",
   },
   {
     color: "upstream_failed.500",
+    filterKey: "upstream_failed.500" as LegendFilter,
     size: { height: "20px", width: "24px" },
     tooltipKey: "calendar.legend.tooltips.successRate20",
   },
   {
     color: "failed.600",
+    filterKey: "failed.600" as LegendFilter,
     size: { height: "20px", width: "32px" },
     tooltipKey: "calendar.legend.tooltips.failed",
   },
 ];
 
 const stateLegendData = [
-  { color: "blue.400", labelKey: "common:states.running" },
-  { color: { _dark: "scheduled.600", _light: "scheduled.200" }, labelKey: "common:states.planned" },
-  { color: "queued.600", labelKey: "common:states.queued" },
-  { color: { _dark: "gray.400", _light: "gray.100" }, labelKey: "common:states.no_status" },
+  { color: "blue.400", filterKey: "blue.400" as LegendFilter, labelKey: "common:states.running" },
+  { color: { _dark: "scheduled.600", _light: "scheduled.200" }, filterKey: "scheduled" as LegendFilter, labelKey: "common:states.planned" },
+  { color: "queued.600", filterKey: "queued.600" as LegendFilter, labelKey: "common:states.queued" },
+  { color: { _dark: "gray.400", _light: "gray.100" }, filterKey: "gray" as LegendFilter, labelKey: "common:states.no_status" },
 ];
 
-export const CalendarLegend = ({ vertical = false }: Props) => {
+export const CalendarLegend = ({ onFilterChange, selectedFilter = "all", vertical = false }: Props) => {
   const { t: translate } = useTranslation("dag");
+
+  const handleLegendClick = (filterKey: LegendFilter) => {
+    if (onFilterChange) {
+      // If already selected, deselect (show all), otherwise select this filter
+      onFilterChange(selectedFilter === filterKey ? "all" : filterKey);
+    }
+  };
 
   return (
     <Box>
@@ -87,9 +104,17 @@ export const CalendarLegend = ({ vertical = false }: Props) => {
               overflow="hidden"
               width="fit-content"
             >
-              {spectrumLegendData.map(({ color, size, tooltipKey }) => (
+              {spectrumLegendData.map(({ color, filterKey, size, tooltipKey }) => (
                 <Tooltip content={translate(tooltipKey)} key={tooltipKey}>
-                  <Box bg={color} cursor="pointer" height={size.width} width={size.height} />
+                  <Box
+                    _hover={{ opacity: 1 }}
+                    bg={color}
+                    cursor="pointer"
+                    height={size.width}
+                    onClick={() => handleLegendClick(filterKey)}
+                    opacity={selectedFilter === "all" || selectedFilter === filterKey ? 1 : 0.3}
+                    width={size.height}
+                  />
                 </Tooltip>
               ))}
             </VStack>
@@ -103,9 +128,17 @@ export const CalendarLegend = ({ vertical = false }: Props) => {
               {translate("common:states.success")}
             </Text>
             <HStack borderRadius="full" boxShadow="sm" gap={0} overflow="hidden">
-              {spectrumLegendData.map(({ color, size, tooltipKey }) => (
+              {spectrumLegendData.map(({ color, filterKey, size, tooltipKey }) => (
                 <Tooltip content={translate(tooltipKey)} key={tooltipKey}>
-                  <Box bg={color} cursor="pointer" height={size.height} width={size.width} />
+                  <Box
+                    _hover={{ opacity: 1 }}
+                    bg={color}
+                    cursor="pointer"
+                    height={size.height}
+                    onClick={() => handleLegendClick(filterKey)}
+                    opacity={selectedFilter === "all" || selectedFilter === filterKey ? 1 : 0.3}
+                    width={size.width}
+                  />
                 </Tooltip>
               ))}
             </HStack>
@@ -121,8 +154,15 @@ export const CalendarLegend = ({ vertical = false }: Props) => {
           {translate("common:state")}
         </Text>
         <HStack gap={4} justify="center" wrap="wrap">
-          {stateLegendData.map(({ color, labelKey }) => (
-            <HStack gap={2} key={labelKey}>
+          {stateLegendData.map(({ color, filterKey, labelKey }) => (
+            <HStack
+              _hover={{ opacity: 1 }}
+              cursor="pointer"
+              gap={2}
+              key={labelKey}
+              onClick={() => handleLegendClick(filterKey)}
+              opacity={selectedFilter === "all" || selectedFilter === filterKey ? 1 : 0.3}
+            >
               <Box bg={color} borderRadius="full" boxShadow="sm" height="16px" width="16px" />
               <Text color="fg.muted" fontSize="sm">
                 {translate(labelKey)}

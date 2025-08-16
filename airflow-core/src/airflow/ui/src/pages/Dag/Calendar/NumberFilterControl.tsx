@@ -16,36 +16,91 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { HStack, Text, Input } from "@chakra-ui/react";
+import { HStack, Text, Input, createListCollection, type SelectValueChangeDetails, Button } from "@chakra-ui/react";
 import { FiFilter } from "react-icons/fi";
 
+import { Select } from "src/components/ui";
+
+export type FilterOperator = "<" | "=" | ">";
+
 type Props = {
+  readonly filterEnabled: boolean;
+  readonly filterOperator: FilterOperator;
   readonly numberFilter: number;
   readonly onFilterChange: (value: number) => void;
+  readonly onFilterEnabledChange: (enabled: boolean) => void;
+  readonly onOperatorChange: (operator: FilterOperator) => void;
   readonly showNumbers: boolean;
 };
 
-export const NumberFilterControl = ({ numberFilter, onFilterChange, showNumbers }: Props) => {
-  if (!showNumbers) {
-    return undefined;
-  }
+export const NumberFilterControl = ({
+  filterEnabled,
+  filterOperator,
+  numberFilter,
+  onFilterChange,
+  onFilterEnabledChange,
+  onOperatorChange,
+  showNumbers
+}: Props) => {
+
+  const operatorOptions = createListCollection({
+    items: [
+      { label: ">", value: ">" },
+      { label: "=", value: "=" },
+      { label: "<", value: "<" },
+    ],
+  });
+
+  const handleOperatorChange = ({ value }: SelectValueChangeDetails<Array<string>>) => {
+    if (value.length > 0) {
+      onOperatorChange(value[0] as FilterOperator);
+    }
+  };
 
   return (
-    <HStack align="center" gap={1}>
-      <FiFilter color="gray" size={14} />
-      <Text color="fg.muted" fontSize="xs" minWidth="20px">
-        ≥
-      </Text>
-      <Input
-        max={999}
-        min={1}
-        onChange={(event) => onFilterChange(Math.max(1, parseInt(event.target.value, 10) || 1))}
+    <HStack align="center" gap={2}>
+      <Button
+        colorPalette="blue"
+        onClick={() => onFilterEnabledChange(!filterEnabled)}
         size="sm"
-        textAlign="center"
-        type="number"
-        value={numberFilter}
-        width="60px"
-      />
+        variant={filterEnabled ? "solid" : "outline"}
+      >
+        <HStack gap={1}>
+          <FiFilter />
+          <Text>Filter</Text>
+        </HStack>
+      </Button>
+
+      {filterEnabled ? <HStack align="center" gap={1}>
+          <Select.Root
+            collection={operatorOptions}
+            onValueChange={handleOperatorChange}
+            size="sm"
+            value={[filterOperator]}
+            width="50px"
+          >
+            <Select.Trigger>
+              <Select.ValueText />
+            </Select.Trigger>
+            <Select.Content>
+              {operatorOptions.items.map((option) => (
+                <Select.Item item={option} key={option.value}>
+                  {option.label}
+                </Select.Item>
+              ))}
+            </Select.Content>
+          </Select.Root>
+          <Input
+            max={999}
+            min={0}
+            onChange={(event) => onFilterChange(Math.max(0, parseInt(event.target.value, 10) || 0))}
+            size="sm"
+            textAlign="center"
+            type="number"
+            value={numberFilter}
+            width="60px"
+          />
+        </HStack> : null}
     </HStack>
   );
 };

@@ -18,7 +18,6 @@
  */
 import { Box, Heading, Link } from "@chakra-ui/react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Link as RouterLink, useParams, useSearchParams } from "react-router-dom";
 
@@ -31,9 +30,8 @@ import { TruncatedText } from "src/components/TruncatedText";
 import { SearchParamsKeys, type SearchParamsKeysType } from "src/constants/searchParams";
 import { getTaskInstanceLinkFromObj } from "src/utils/links";
 
-import { FilterManager } from "./FilterManager";
-import type { FilterType } from "./FilterPill";
 import { XComEntry } from "./XComEntry";
+import { XComFiltersExample } from "./XComFiltersExample";
 
 const {
   DAG_DISPLAY_NAME_PATTERN: DAG_DISPLAY_NAME_PATTERN_PARAM,
@@ -114,8 +112,8 @@ export const XCom = () => {
   const { dagId = "~", mapIndex = "-1", runId = "~", taskId = "~" } = useParams();
   const { t: translate } = useTranslation(["browse", "common"]);
   const { setTableURLState, tableURLState } = useTableURLState();
-  const { pagination, sorting } = tableURLState;
-  const [searchParams, setSearchParams] = useSearchParams();
+  const { pagination } = tableURLState;
+  const [searchParams] = useSearchParams();
 
   const filteredKey = searchParams.get(KEY_PATTERN_PARAM);
   const filteredDagDisplayName = searchParams.get(DAG_DISPLAY_NAME_PATTERN_PARAM);
@@ -156,52 +154,13 @@ export const XCom = () => {
     enabled: !isNaN(pagination.pageSize),
   });
 
-  const handleFiltersChange = useCallback(
-    (filters: Record<FilterType, string>) => {
-      Object.keys(filters).forEach((filterType) => {
-        const value = filters[filterType as FilterType];
-        let paramKey: string;
-
-        switch (filterType) {
-          case "dag_display_name_pattern":
-            paramKey = DAG_DISPLAY_NAME_PATTERN_PARAM;
-            break;
-          case "key_pattern":
-            paramKey = KEY_PATTERN_PARAM;
-            break;
-          case "run_id_pattern":
-            paramKey = RUN_ID_PATTERN_PARAM;
-            break;
-          case "task_id_pattern":
-            paramKey = TASK_ID_PATTERN_PARAM;
-            break;
-          default:
-            return;
-        }
-
-        if (value === "") {
-          searchParams.delete(paramKey);
-        } else {
-          searchParams.set(paramKey, value);
-        }
-      });
-
-      setTableURLState({
-        pagination: { ...pagination, pageIndex: 0 },
-        sorting,
-      });
-      setSearchParams(searchParams);
-    },
-    [pagination, searchParams, setSearchParams, setTableURLState, sorting],
-  );
-
   return (
     <Box>
       {dagId === "~" && runId === "~" && taskId === "~" ? (
         <Heading size="md">{translate("xcom.title")}</Heading>
       ) : undefined}
 
-      <Box paddingY="4px">
+      {/* <Box paddingY="4px">
         <FilterManager
           initialFilters={{
             dag_display_name_pattern: filteredDagDisplayName ?? "",
@@ -211,9 +170,10 @@ export const XCom = () => {
           }}
           onFiltersChange={handleFiltersChange}
         />
-      </Box>
+      </Box> */}
 
       <ErrorAlert error={error} />
+      <XComFiltersExample />
       <DataTable
         columns={columns(translate)}
         data={data ? data.xcom_entries : []}

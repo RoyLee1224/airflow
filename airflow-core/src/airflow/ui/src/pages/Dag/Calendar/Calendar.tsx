@@ -33,6 +33,11 @@ import { DailyCalendarView } from "./DailyCalendarView";
 import { HourlyCalendarView } from "./HourlyCalendarView";
 import { createCalendarScale } from "./calendarUtils";
 
+// Import mock data
+import uniformDistribution from "../../../../../../../../files/uniform_distribution.json";
+import wideDistribution from "../../../../../../../../files/wide_distribution.json";
+import highVolume from "../../../../../../../../files/high_volume.json";
+
 const spin = keyframes`
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
@@ -44,6 +49,8 @@ export const Calendar = () => {
   const [selectedDate, setSelectedDate] = useState(dayjs());
   const [granularity, setGranularity] = useLocalStorage<"daily" | "hourly">("calendar-granularity", "hourly");
   const [viewMode, setViewMode] = useLocalStorage<"failed" | "total">("calendar-view-mode", "total");
+  const [useMockData, setUseMockData] = useLocalStorage<boolean>("calendar-use-mock", false);
+  const [mockDataType, setMockDataType] = useLocalStorage<"uniform" | "wide" | "highVolume">("calendar-mock-type", "uniform");
 
   const currentDate = dayjs();
 
@@ -67,15 +74,32 @@ export const Calendar = () => {
     }
   }, [granularity, selectedDate]);
 
-  const { data, error, isLoading } = useCalendarServiceGetCalendar(
+  const { data: apiData, error, isLoading } = useCalendarServiceGetCalendar(
     {
       dagId,
       granularity,
       ...dateRange,
     },
     undefined,
-    { enabled: Boolean(dagId) },
+    { enabled: Boolean(dagId) && !useMockData },
   );
+
+  // Select mock data based on type
+  const getMockData = () => {
+    switch (mockDataType) {
+      case "uniform":
+        return uniformDistribution;
+      case "wide":
+        return wideDistribution;
+      case "highVolume":
+        return highVolume;
+      default:
+        return uniformDistribution;
+    }
+  };
+
+  // Use mock data when enabled, otherwise use API data
+  const data = useMockData ? getMockData() : apiData;
 
   const scale = useMemo(() => {
     if (!data?.dag_runs) {
@@ -217,6 +241,41 @@ export const Calendar = () => {
               {translate("overview.buttons.failedRun_other")}
             </Button>
           </ButtonGroup>
+
+          <Button
+            colorPalette={useMockData ? "orange" : "gray"}
+            onClick={() => setUseMockData(!useMockData)}
+            size="sm"
+            variant={useMockData ? "solid" : "outline"}
+          >
+            {useMockData ? " Mock Data" : " Live Data"}
+          </Button>
+
+          {useMockData && (
+            <ButtonGroup attached size="sm" variant="outline">
+              <Button
+                colorPalette="purple"
+                onClick={() => setMockDataType("uniform")}
+                variant={mockDataType === "uniform" ? "solid" : "outline"}
+              >
+                Uniform
+              </Button>
+              <Button
+                colorPalette="purple"
+                onClick={() => setMockDataType("wide")}
+                variant={mockDataType === "wide" ? "solid" : "outline"}
+              >
+                 Wide
+              </Button>
+              <Button
+                colorPalette="purple"
+                onClick={() => setMockDataType("highVolume")}
+                variant={mockDataType === "highVolume" ? "solid" : "outline"}
+              >
+                 High Volume
+              </Button>
+            </ButtonGroup>
+          )}
         </HStack>
       </HStack>
 

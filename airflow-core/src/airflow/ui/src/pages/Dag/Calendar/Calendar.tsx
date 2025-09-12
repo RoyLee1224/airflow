@@ -27,6 +27,7 @@ import { useLocalStorage } from "usehooks-ts";
 
 import { useCalendarServiceGetCalendar } from "openapi/queries";
 import { ErrorAlert } from "src/components/ErrorAlert";
+import highVolumeData from "../../../../../../../../files/high_volume.json";
 
 import { CalendarLegend } from "./CalendarLegend";
 import { DailyCalendarView } from "./DailyCalendarView";
@@ -44,6 +45,7 @@ export const Calendar = () => {
   const [selectedDate, setSelectedDate] = useState(dayjs());
   const [granularity, setGranularity] = useLocalStorage<"daily" | "hourly">("calendar-granularity", "hourly");
   const [viewMode, setViewMode] = useLocalStorage<"failed" | "total">("calendar-view-mode", "total");
+  const [dataSource, setDataSource] = useLocalStorage<"api" | "high_volume">("calendar-data-source", "api");
 
   const currentDate = dayjs();
 
@@ -74,15 +76,19 @@ export const Calendar = () => {
       ...dateRange,
     },
     undefined,
-    { enabled: Boolean(dagId) },
+    { enabled: Boolean(dagId) && dataSource === "api" },
   );
+
+  // Choose data source
+  const finalData = dataSource === "high_volume" ? highVolumeData : data;
+  const finalIsLoading = dataSource === "high_volume" ? false : isLoading;
 
   const scale = useMemo(
-    () => createCalendarScale(data?.dag_runs ?? [], viewMode, granularity),
-    [data?.dag_runs, viewMode, granularity],
+    () => createCalendarScale(finalData?.dag_runs ?? [], viewMode, granularity),
+    [finalData?.dag_runs, viewMode, granularity],
   );
 
-  if (!data && !isLoading) {
+  if (!finalData && !finalIsLoading) {
     return (
       <Box p={4}>
         <Text>{translate("calendar.noData")}</Text>
@@ -214,11 +220,28 @@ export const Calendar = () => {
               {translate("overview.buttons.failedRun_other")}
             </Button>
           </ButtonGroup>
+
+          <ButtonGroup attached size="sm" variant="outline">
+            <Button
+              colorPalette="green"
+              onClick={() => setDataSource("api")}
+              variant={dataSource === "api" ? "solid" : "outline"}
+            >
+              API Data
+            </Button>
+            <Button
+              colorPalette="green"
+              onClick={() => setDataSource("high_volume")}
+              variant={dataSource === "high_volume" ? "solid" : "outline"}
+            >
+              Mock Data
+            </Button>
+          </ButtonGroup>
         </HStack>
       </HStack>
 
       <Box position="relative">
-        {isLoading ? (
+        {finalIsLoading ? (
           <Box
             alignItems="center"
             backdropFilter="blur(2px)"
@@ -249,7 +272,7 @@ export const Calendar = () => {
         {granularity === "daily" ? (
           <>
             <DailyCalendarView
-              data={data?.dag_runs ?? []}
+              data={finalData?.dag_runs ?? []}
               scale={scale}
               selectedYear={selectedDate.year()}
               viewMode={viewMode}
@@ -260,7 +283,7 @@ export const Calendar = () => {
           <HStack align="start" gap={2}>
             <Box>
               <HourlyCalendarView
-                data={data?.dag_runs ?? []}
+                data={finalData?.dag_runs ?? []}
                 scale={scale}
                 selectedMonth={selectedDate.month()}
                 selectedYear={selectedDate.year()}

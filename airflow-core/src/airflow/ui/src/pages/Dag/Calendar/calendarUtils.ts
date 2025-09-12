@@ -39,10 +39,10 @@ const PLANNED_COLOR = { _dark: "stone.600", _light: "stone.200" };
 
 const TOTAL_COLOR_INTENSITIES = [
   EMPTY_COLOR, // 0
-  { _dark: "green.300", _light: "green.200" },
-  { _dark: "green.500", _light: "green.400" },
-  { _dark: "green.700", _light: "green.600" },
-  { _dark: "green.900", _light: "green.800" },
+  { _dark: "brand.300", _light: "brand.200" },
+  { _dark: "brand.500", _light: "brand.400" },
+  { _dark: "brand.700", _light: "brand.600" },
+  { _dark: "brand.900", _light: "brand.800" },
 ];
 
 const FAILURE_COLOR_INTENSITIES = [

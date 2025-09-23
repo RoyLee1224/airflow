@@ -30,6 +30,7 @@ import { SearchParamsKeys } from "./searchParams";
 
 export enum FilterTypes {
   DATE = "date",
+  DATERANGE = "daterange",
   NUMBER = "number",
   SELECT = "select",
   TEXT = "text",
@@ -85,6 +86,11 @@ export const useFilterConfigs = () => {
       label: translate("common:filters.logicalDateTo"),
       type: FilterTypes.DATE,
     },
+    [SearchParamsKeys.LOGICAL_DATE_RANGE]: {
+      icon: <MdDateRange />,
+      label: translate("common:date"),
+      type: FilterTypes.DATERANGE,
+    },
     [SearchParamsKeys.MAP_INDEX]: {
       icon: <LuBrackets />,
       label: translate("common:mapIndex"),
@@ -116,6 +122,11 @@ export const useFilterConfigs = () => {
       icon: <MdDateRange />,
       label: translate("common:filters.runAfterTo"),
       type: FilterTypes.DATE,
+    },
+    [SearchParamsKeys.RUN_AFTER_RANGE]: {
+      icon: <MdDateRange />,
+      label: translate("common:dagRun.runAfter"),
+      type: FilterTypes.DATERANGE,
     },
     [SearchParamsKeys.RUN_ID]: {
       hotkeyDisabled: true,

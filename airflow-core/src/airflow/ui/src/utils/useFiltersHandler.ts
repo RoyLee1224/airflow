@@ -20,7 +20,7 @@ import { useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import { useTableURLState } from "src/components/DataTable/useTableUrlState";
-import type { FilterValue } from "src/components/FilterBar";
+import type { FilterValue, DateRangeValue } from "src/components/FilterBar";
 import { useFilterConfigs } from "src/constants/filterConfigs";
 import { SearchParamsKeys } from "src/constants/searchParams";
 
@@ -34,10 +34,12 @@ export type FilterableSearchParamsKeys =
   | SearchParamsKeys.KEY_PATTERN
   | SearchParamsKeys.LOGICAL_DATE_GTE
   | SearchParamsKeys.LOGICAL_DATE_LTE
+  | SearchParamsKeys.LOGICAL_DATE_RANGE
   | SearchParamsKeys.MAP_INDEX
   | SearchParamsKeys.RESPONSE_RECEIVED
   | SearchParamsKeys.RUN_AFTER_GTE
   | SearchParamsKeys.RUN_AFTER_LTE
+  | SearchParamsKeys.RUN_AFTER_RANGE
   | SearchParamsKeys.RUN_ID
   | SearchParamsKeys.RUN_ID_PATTERN
   | SearchParamsKeys.START_DATE
@@ -71,8 +73,16 @@ export const useFiltersHandler = (searchParamKeys: Array<FilterableSearchParamsK
 
           if (value === null || value === undefined || value === "") {
             newParams.delete(config.key);
+          } else if (config.type === "daterange" && typeof value === "object") {
+            const rangeValue = value as DateRangeValue;
+
+            if ((rangeValue.startDate !== null && rangeValue.startDate !== undefined && rangeValue.startDate !== "") || (rangeValue.endDate !== null && rangeValue.endDate !== undefined && rangeValue.endDate !== "")) {
+              newParams.set(config.key, JSON.stringify(rangeValue));
+            } else {
+              newParams.delete(config.key);
+            }
           } else {
-            newParams.set(config.key, String(value));
+            newParams.set(config.key, typeof value === "object" ? JSON.stringify(value) : String(value));
           }
         });
 

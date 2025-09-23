@@ -20,7 +20,7 @@ import { VStack } from "@chakra-ui/react";
 import { useMemo } from "react";
 import { useParams } from "react-router-dom";
 
-import { FilterBar, type FilterValue } from "src/components/FilterBar";
+import { FilterBar, type FilterValue, type DateRangeValue } from "src/components/FilterBar";
 import { SearchParamsKeys } from "src/constants/searchParams";
 import { useFiltersHandler, type FilterableSearchParamsKeys } from "src/utils";
 
@@ -30,10 +30,8 @@ export const XComFilters = () => {
   const searchParamKeys = useMemo((): Array<FilterableSearchParamsKeys> => {
     const keys: Array<FilterableSearchParamsKeys> = [
       SearchParamsKeys.KEY_PATTERN,
-      SearchParamsKeys.LOGICAL_DATE_GTE,
-      SearchParamsKeys.LOGICAL_DATE_LTE,
-      SearchParamsKeys.RUN_AFTER_GTE,
-      SearchParamsKeys.RUN_AFTER_LTE,
+      SearchParamsKeys.LOGICAL_DATE_RANGE,
+      SearchParamsKeys.RUN_AFTER_RANGE,
     ];
 
     if (dagId === "~") {
@@ -68,6 +66,12 @@ export const XComFilters = () => {
           const parsedValue = Number(value);
 
           values[config.key] = isNaN(parsedValue) ? value : parsedValue;
+        } else if (config.type === "daterange") {
+          try {
+            values[config.key] = JSON.parse(value) as DateRangeValue;
+          } catch {
+            values[config.key] = { endDate: undefined, startDate: undefined };
+          }
         } else {
           values[config.key] = value;
         }

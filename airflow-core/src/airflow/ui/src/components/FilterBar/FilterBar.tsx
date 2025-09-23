@@ -26,6 +26,7 @@ import { Menu } from "src/components/ui";
 
 import { getDefaultFilterIcon } from "./defaultIcons";
 import { DateFilter } from "./filters/DateFilter";
+import { DateRangeFilter } from "./filters/DateRangeFilter";
 import { NumberFilter } from "./filters/NumberFilter";
 import { SelectFilter } from "./filters/SelectFilter";
 import { TextSearchFilter } from "./filters/TextSearchFilter";
@@ -33,7 +34,7 @@ import type { FilterBarProps, FilterConfig, FilterState, FilterValue } from "./t
 
 const defaultInitialValues: Record<string, FilterValue> = {};
 
-const getFilterIcon = (config: FilterConfig) => config.icon ?? getDefaultFilterIcon(config.type);
+const getFilterIcon = (config: FilterConfig): React.ReactNode => config.icon ?? getDefaultFilterIcon(config.type);
 
 export const FilterBar = ({
   configs,
@@ -44,7 +45,16 @@ export const FilterBar = ({
   const { t: translate } = useTranslation(["admin", "common"]);
   const [filters, setFilters] = useState<Array<FilterState>>(() =>
     Object.entries(initialValues)
-      .filter(([, value]) => value !== null && value !== undefined && value !== "")
+      .filter(([, value]) => {
+        if (value === null || value === undefined || value === "") {return false;}
+        if (typeof value === "object") {
+          const rangeValue = value as { endDate?: string | null; startDate?: string | null; };
+
+          return Boolean(rangeValue.startDate) || Boolean(rangeValue.endDate);
+        }
+
+        return true;
+      })
       .map(([key, value]) => {
         const config = configs.find((con) => con.key === key);
 
@@ -68,7 +78,15 @@ export const FilterBar = ({
     (updatedFilters: Array<FilterState>) => {
       const filtersRecord = updatedFilters.reduce<Record<string, FilterValue>>((accumulator, filter) => {
         if (filter.value !== null && filter.value !== undefined && filter.value !== "") {
-          accumulator[filter.config.key] = filter.value;
+          if (filter.config.type === "daterange" && typeof filter.value === "object") {
+            const rangeValue = filter.value as { endDate?: string | null; startDate?: string | null; };
+
+            if (Boolean(rangeValue.startDate) || Boolean(rangeValue.endDate)) {
+              accumulator[filter.config.key] = filter.value;
+            }
+          } else {
+            accumulator[filter.config.key] = filter.value;
+          }
         }
 
         return accumulator;
@@ -80,10 +98,17 @@ export const FilterBar = ({
   );
 
   const addFilter = (config: FilterConfig) => {
+    const getDefaultValue = () => {
+      if (config.defaultValue !== undefined) {return config.defaultValue;}
+      if (config.type === "daterange") {return { endDate: undefined, startDate: undefined };}
+
+      return "";
+    };
+
     const newFilter: FilterState = {
       config,
       id: `${config.key}-${Date.now()}`,
-      value: config.defaultValue ?? "",
+      value: getDefaultValue(),
     };
 
     const updatedFilters = [...filters, newFilter];
@@ -125,6 +150,8 @@ export const FilterBar = ({
     switch (filter.config.type) {
       case "date":
         return <DateFilter key={filter.id} {...props} />;
+      case "daterange":
+        return <DateRangeFilter key={filter.id} {...props} />;
       case "number":
         return <NumberFilter key={filter.id} {...props} />;
       case "select":

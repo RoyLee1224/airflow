@@ -320,7 +320,6 @@ def get_dag_runs(
     start_date_range: Annotated[RangeFilter, Depends(datetime_range_filter_factory("start_date", DagRun))],
     end_date_range: Annotated[RangeFilter, Depends(datetime_range_filter_factory("end_date", DagRun))],
     update_at_range: Annotated[RangeFilter, Depends(datetime_range_filter_factory("updated_at", DagRun))],
-    duration_range: Annotated[RangeFilter, Depends(float_range_filter_factory("duration", DagRun))],
     conf_contains: Annotated[
         FilterParam[str],
         Depends(filter_param_factory(DagRun.conf, str, FilterOptionEnum.CONTAINS, "conf_contains")),
@@ -359,6 +358,11 @@ def get_dag_runs(
         Depends(search_param_factory(DagRun.triggering_user_name, "triggering_user_name_pattern")),
     ],
     dag_id_pattern: Annotated[_SearchParam, Depends(search_param_factory(DagRun.dag_id, "dag_id_pattern"))],
+    # Handle duration filters manually instead of using generic filter - must be last due to default values
+    duration_gte: float | None = Query(None, description="Filter DAG runs with duration >= specified seconds"),
+    duration_gt: float | None = Query(None, description="Filter DAG runs with duration > specified seconds"),
+    duration_lte: float | None = Query(None, description="Filter DAG runs with duration <= specified seconds"),
+    duration_lt: float | None = Query(None, description="Filter DAG runs with duration < specified seconds"),
 ) -> DAGRunCollectionResponse:
     """
     Get all DAG Runs.
@@ -375,6 +379,27 @@ def get_dag_runs(
     if dag_version.value:
         query = query.join(DagVersion, DagRun.created_dag_version_id == DagVersion.id)
 
+    # Handle duration filters manually since duration is a computed property
+    from sqlalchemy import func, extract, case
+    from sqlalchemy.sql import text
+
+    # Create manual duration expression - use SQLite-specific calculation
+    # SQLite doesn't support extract("epoch", ...) so we use julianday
+    duration_expr = case(
+        ((DagRun.end_date.isnot(None)) & (DagRun.start_date.isnot(None)),
+         (func.julianday(DagRun.end_date) - func.julianday(DagRun.start_date)) * 86400),  # Convert days to seconds
+        else_=None
+    )
+
+    if duration_gte is not None:
+        query = query.where(duration_expr >= duration_gte)
+    if duration_gt is not None:
+        query = query.where(duration_expr > duration_gt)
+    if duration_lte is not None:
+        query = query.where(duration_expr <= duration_lte)
+    if duration_lt is not None:
+        query = query.where(duration_expr < duration_lt)
+
     dag_run_select, total_entries = paginated_select(
         statement=query,
         filters=[
@@ -383,7 +408,7 @@ def get_dag_runs(
             start_date_range,
             end_date_range,
             update_at_range,
-            duration_range,
+            # duration_range removed - handled manually above
             conf_contains,
             state,
             run_type,
@@ -398,6 +423,7 @@ def get_dag_runs(
         limit=limit,
         session=session,
     )
+
     dag_runs = session.scalars(dag_run_select)
 
     return DAGRunCollectionResponse(

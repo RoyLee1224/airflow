@@ -109,14 +109,13 @@ def setup(request, dag_maker, session=None):
         run_type=DAG1_RUN1_RUN_TYPE,
         triggered_by=DAG1_RUN1_TRIGGERED_BY,
         logical_date=LOGICAL_DATE1,
+        conf={"env": "development", "version": "1.0"},  # Set conf during creation
     )
     # Set triggering_user_name for testing
     dag_run1.triggering_user_name = "alice_admin"
-    dag_run1.note = (DAG1_RUN1_NOTE, "not_test")
+    dag_run1.note = DAG1_RUN1_NOTE
     # Set end_date for testing duration filter
     dag_run1.end_date = dag_run1.start_date + timedelta(seconds=101)
-    # Set conf for testing conf_contains filter (values ordered for predictable sorting)
-    dag_run1.conf = {"env": "development", "version": "1.0"}
 
     for i, task in enumerate([task1, task2], start=1):
         ti = dag_run1.get_task_instance(task_id=task.task_id)
@@ -131,21 +130,22 @@ def setup(request, dag_maker, session=None):
         run_type=DAG1_RUN2_RUN_TYPE,
         triggered_by=DAG1_RUN2_TRIGGERED_BY,
         logical_date=LOGICAL_DATE2,
+        conf={"env": "production", "debug": True},  # Set conf during creation
     )
     # Set triggering_user_name for testing
     dag_run2.triggering_user_name = "bob_service"
     # Set end_date for testing duration filter
     dag_run2.end_date = dag_run2.start_date + timedelta(seconds=201)
-    # Set conf for testing conf_contains filter
-    dag_run2.conf = {"env": "production", "debug": True}
 
     ti1 = dag_run2.get_task_instance(task_id=task1.task_id)
     ti1.task = task1
     ti1.state = State.SUCCESS
+    session.merge(ti1)
 
     ti2 = dag_run2.get_task_instance(task_id=task2.task_id)
     ti2.task = task2
     ti2.state = State.FAILED
+    session.merge(ti2)
 
     with dag_maker(DAG2_ID, schedule=None, start_date=START_DATE2, params=DAG2_PARAM, serialized=True):
         EmptyOperator(task_id="task_2")
@@ -156,13 +156,12 @@ def setup(request, dag_maker, session=None):
         run_type=DAG2_RUN1_RUN_TYPE,
         triggered_by=DAG2_RUN1_TRIGGERED_BY,
         logical_date=LOGICAL_DATE3,
+        conf={"env": "staging", "test_mode": True},  # Set conf during creation
     )
     # Set triggering_user_name for testing
     dag_run3.triggering_user_name = "service_account"
     # Set end_date for testing duration filter
     dag_run3.end_date = dag_run3.start_date + timedelta(seconds=51)
-    # Set conf for testing conf_contains filter
-    dag_run3.conf = {"env": "staging", "test_mode": True}
 
     dag_run4 = dag_maker.create_dagrun(
         run_id=DAG2_RUN2_ID,
@@ -170,19 +169,21 @@ def setup(request, dag_maker, session=None):
         run_type=DAG2_RUN2_RUN_TYPE,
         triggered_by=DAG2_RUN2_TRIGGERED_BY,
         logical_date=LOGICAL_DATE4,
+        conf={"env": "testing", "mode": "ci"},  # Set conf during creation
     )
     # Leave triggering_user_name as None for testing
     dag_run4.triggering_user_name = None
     # Set end_date for testing duration filter
     dag_run4.end_date = dag_run4.start_date + timedelta(seconds=150)
-    # Set conf for testing conf_contains filter
-    dag_run4.conf = {"env": "testing", "mode": "ci"}
 
     dag_maker.sync_dagbag_to_db()
     dag_maker.dag_model.has_task_concurrency_limits = True
-    session.merge(ti1)
-    session.merge(ti2)
+    session.merge(dag_run1)
+    session.merge(dag_run2)
+    session.merge(dag_run3)
+    session.merge(dag_run4)
     session.merge(dag_maker.dag_model)
+    session.flush()  # Ensure all changes are persisted to DB before commit
     session.commit()
 
 
@@ -669,7 +670,7 @@ class TestGetDagRuns:
         ],
     )
     @pytest.mark.usefixtures("configure_git_connection_for_dag_bundle")
-    def test_filters(self, test_client, dag_id, query_params, expected_dag_id_list):
+    def test_filters(self, test_client, dag_id, query_params, expected_dag_id_list, session):
         response = test_client.get(f"/dags/{dag_id}/dagRuns", params=query_params)
         assert response.status_code == 200
         body = response.json()

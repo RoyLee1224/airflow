@@ -48,26 +48,24 @@ export const DateRangeCalendar = ({
     day = day.add(1, "day");
   }
 
-  const startDateValue = value.startDate !== null && value.startDate !== undefined && String(value.startDate).trim() !== "" ? dayjs(value.startDate) : undefined;
-  const endDateValue = value.endDate !== null && value.endDate !== undefined && String(value.endDate).trim() !== "" ? dayjs(value.endDate) : undefined;
+  const startDateValue =
+    value.startDate !== null && value.startDate !== undefined && String(value.startDate).trim() !== ""
+      ? dayjs(value.startDate)
+      : undefined;
+  const endDateValue =
+    value.endDate !== null && value.endDate !== undefined && String(value.endDate).trim() !== ""
+      ? dayjs(value.endDate)
+      : undefined;
 
   return (
     <>
       {/* Month Navigation */}
       <HStack justify="space-between" w="full">
-        <Button
-          onClick={() => onMonthChange(currentMonth.subtract(1, "month"))}
-          size="sm"
-          variant="ghost"
-        >
+        <Button onClick={() => onMonthChange(currentMonth.subtract(1, "month"))} size="sm" variant="ghost">
           <MdChevronLeft />
         </Button>
         <Text fontWeight="medium">{currentMonth.format("MMM YYYY")}</Text>
-        <Button
-          onClick={() => onMonthChange(currentMonth.add(1, "month"))}
-          size="sm"
-          variant="ghost"
-        >
+        <Button onClick={() => onMonthChange(currentMonth.add(1, "month"))} size="sm" variant="ghost">
           <MdChevronRight />
         </Button>
       </HStack>
@@ -99,7 +97,8 @@ export const DateRangeCalendar = ({
             const isEndSelected = Boolean(endDateValue?.isSame(dayItem, "day"));
             const isSelected = isStartSelected || isEndSelected;
             const isInRange =
-              startDateValue && endDateValue &&
+              startDateValue &&
+              endDateValue &&
               dayItem.isAfter(startDateValue, "day") &&
               dayItem.isBefore(endDateValue, "day");
             const isToday = dayItem.isSame(dayjs(), "day");

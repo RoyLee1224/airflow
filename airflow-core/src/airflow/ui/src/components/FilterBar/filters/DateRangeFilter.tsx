@@ -26,16 +26,21 @@ import { Popover } from "src/components/ui";
 
 import { FilterPill } from "../FilterPill";
 import type { DateRangeValue, FilterPluginProps } from "../types";
-
 import { DateRangeCalendar } from "./DateRangeCalendar";
 
-type DateSelection = "end" | "start" | null;
+type DateSelection = "end" | "start" | undefined;
 
 export const DateRangeFilter = ({ filter, onChange, onRemove }: FilterPluginProps) => {
   const { t: translate } = useTranslation(["common"]);
-  const value = (filter.value as DateRangeValue) ?? { endDate: undefined, startDate: undefined };
-  const hasStartDate = Boolean(value.startDate !== null && value.startDate !== undefined && String(value.startDate).trim() !== "");
-  const hasEndDate = Boolean(value.endDate !== null && value.endDate !== undefined && String(value.endDate).trim() !== "");
+  const value = (filter.value !== null && filter.value !== undefined && typeof filter.value === 'object')
+    ? (filter.value as DateRangeValue)
+    : { endDate: undefined, startDate: undefined };
+  const hasStartDate = Boolean(
+    value.startDate !== null && value.startDate !== undefined && String(value.startDate).trim() !== "",
+  );
+  const hasEndDate = Boolean(
+    value.endDate !== null && value.endDate !== undefined && String(value.endDate).trim() !== "",
+  );
   const hasValue = hasStartDate || hasEndDate;
 
   const [currentMonth, setCurrentMonth] = useState(() => dayjs());
@@ -53,7 +58,9 @@ export const DateRangeFilter = ({ filter, onChange, onRemove }: FilterPluginProp
   }, [value.startDate, value.endDate, hasStartDate, hasEndDate, startDateInput, endDateInput]);
 
   const formatDisplayValue = () => {
-    if (!hasValue) {return "";}
+    if (!hasValue) {
+      return "";
+    }
 
     const startFormatted = hasStartDate ? dayjs(value.startDate).format("MMM DD, YYYY") : "";
     const endFormatted = hasEndDate ? dayjs(value.endDate).format("MMM DD, YYYY") : "";
@@ -80,7 +87,8 @@ export const DateRangeFilter = ({ filter, onChange, onRemove }: FilterPluginProp
       setStartDateInput(date.format("YYYY/MM/DD"));
       setDateSelection("end");
     } else if (dateSelection === "end" || hasStartDate) {
-      const startDate = value.startDate !== null && value.startDate !== undefined ? dayjs(value.startDate) : undefined;
+      const startDate =
+        value.startDate !== null && value.startDate !== undefined ? dayjs(value.startDate) : undefined;
 
       if (startDate && date.isBefore(startDate)) {
         onChange({
@@ -133,8 +141,8 @@ export const DateRangeFilter = ({ filter, onChange, onRemove }: FilterPluginProp
   };
 
   const renderCalendar = () => (
-    <VStack gap={4} w="280px">
-      <HStack gap={2} w="full">
+    <VStack gap={4} w="full">
+      <HStack gap={3} w="full">
         <Box
           border="2px solid"
           borderColor={dateSelection === "start" ? "blue.500" : "gray.300"}
@@ -144,7 +152,7 @@ export const DateRangeFilter = ({ filter, onChange, onRemove }: FilterPluginProp
           transition="border-color 0.2s"
         >
           <Text color="gray.600" fontSize="xs" mb={1}>
-{translate("from") || "From"}
+            {translate("from") || "From"}
           </Text>
           <Input
             _focus={{ boxShadow: "none" }}
@@ -172,7 +180,7 @@ export const DateRangeFilter = ({ filter, onChange, onRemove }: FilterPluginProp
           transition="border-color 0.2s"
         >
           <Text color="gray.600" fontSize="xs" mb={1}>
-{translate("to") || "To"}
+            {translate("to") || "To"}
           </Text>
           <Input
             _focus={{ boxShadow: "none" }}
@@ -240,12 +248,12 @@ export const DateRangeFilter = ({ filter, onChange, onRemove }: FilterPluginProp
             <HStack flex="1" gap={2} px={3} py={1}>
               <MdCalendarToday />
               <Text color={hasValue ? "inherit" : "gray.500"} fontSize="sm">
-{hasValue ? formatDisplayValue() : translate("selectDateRange") || "Select date range"}
+                {hasValue ? formatDisplayValue() : translate("selectDateRange") || "Select date range"}
               </Text>
             </HStack>
           </Box>
         </Popover.Trigger>
-        <Popover.Content p={4} w="300px">
+        <Popover.Content p={4} w="320px">
           {renderCalendar()}
         </Popover.Content>
       </Popover.Root>

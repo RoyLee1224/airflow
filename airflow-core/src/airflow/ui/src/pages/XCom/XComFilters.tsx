@@ -55,25 +55,59 @@ export const XComFilters = () => {
 
   const { filterConfigs, handleFiltersChange, searchParams } = useFiltersHandler(searchParamKeys);
 
+  const processDateRangeValue = (gteKey: string, lteKey: string): DateRangeValue | null => {
+    const gte = searchParams.get(gteKey);
+    const lte = searchParams.get(lteKey);
+
+    if ((gte !== null && gte !== "") || (lte !== null && lte !== "")) {
+      return {
+        endDate: lte ?? undefined,
+        startDate: gte ?? undefined,
+      } as DateRangeValue;
+    }
+
+    return undefined;
+  };
+
+  const processGenericValue = (config: any, value: string): FilterValue => {
+    if (config.type === "number") {
+      const parsedValue = Number(value);
+
+      return isNaN(parsedValue) ? value : parsedValue;
+    }
+
+    if (config.type === "daterange") {
+      try {
+        return JSON.parse(value) as DateRangeValue;
+      } catch {
+        return { endDate: undefined, startDate: undefined };
+      }
+    }
+
+    return value;
+  };
+
   const initialValues = useMemo(() => {
     const values: Record<string, FilterValue> = {};
 
     filterConfigs.forEach((config) => {
-      const value = searchParams.get(config.key);
+      if (config.key === SearchParamsKeys.LOGICAL_DATE_RANGE as string) {
+        const dateRange = processDateRangeValue(SearchParamsKeys.LOGICAL_DATE_GTE, SearchParamsKeys.LOGICAL_DATE_LTE);
 
-      if (value !== null && value !== "") {
-        if (config.type === "number") {
-          const parsedValue = Number(value);
+        if (dateRange !== null) {
+          values[config.key] = dateRange;
+        }
+      } else if (config.key === SearchParamsKeys.RUN_AFTER_RANGE as string) {
+        const dateRange = processDateRangeValue(SearchParamsKeys.RUN_AFTER_GTE, SearchParamsKeys.RUN_AFTER_LTE);
 
-          values[config.key] = isNaN(parsedValue) ? value : parsedValue;
-        } else if (config.type === "daterange") {
-          try {
-            values[config.key] = JSON.parse(value) as DateRangeValue;
-          } catch {
-            values[config.key] = { endDate: undefined, startDate: undefined };
-          }
-        } else {
-          values[config.key] = value;
+        if (dateRange !== null) {
+          values[config.key] = dateRange;
+        }
+      } else {
+        const value = searchParams.get(config.key);
+
+        if (value !== null && value !== "") {
+          values[config.key] = processGenericValue(config, value);
         }
       }
     });

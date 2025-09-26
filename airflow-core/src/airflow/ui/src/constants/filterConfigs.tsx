@@ -88,7 +88,7 @@ export const useFilterConfigs = () => {
     },
     [SearchParamsKeys.LOGICAL_DATE_RANGE]: {
       icon: <MdDateRange />,
-      label: "Logical Date Range",
+      label: translate("common:logicalDate"),
       type: FilterTypes.DATERANGE,
     },
     [SearchParamsKeys.MAP_INDEX]: {
@@ -125,7 +125,7 @@ export const useFilterConfigs = () => {
     },
     [SearchParamsKeys.RUN_AFTER_RANGE]: {
       icon: <MdDateRange />,
-      label: "Run After Range",
+      label: translate("common:dagRun.runAfter"),
       type: FilterTypes.DATERANGE,
     },
     [SearchParamsKeys.RUN_ID]: {

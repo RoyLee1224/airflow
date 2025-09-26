@@ -34,7 +34,8 @@ import type { FilterBarProps, FilterConfig, FilterState, FilterValue } from "./t
 
 const defaultInitialValues: Record<string, FilterValue> = {};
 
-const getFilterIcon = (config: FilterConfig): React.ReactNode => config.icon ?? getDefaultFilterIcon(config.type);
+const getFilterIcon = (config: FilterConfig): React.ReactNode =>
+  config.icon ?? getDefaultFilterIcon(config.type);
 
 export const FilterBar = ({
   configs,
@@ -46,9 +47,11 @@ export const FilterBar = ({
   const [filters, setFilters] = useState<Array<FilterState>>(() =>
     Object.entries(initialValues)
       .filter(([, value]) => {
-        if (value === null || value === undefined || value === "") {return false;}
+        if (value === null || value === undefined || value === "") {
+          return false;
+        }
         if (typeof value === "object") {
-          const rangeValue = value as { endDate?: string | null; startDate?: string | null; };
+          const rangeValue = value as { endDate?: string | null; startDate?: string | null };
 
           return Boolean(rangeValue.startDate) || Boolean(rangeValue.endDate);
         }
@@ -79,7 +82,7 @@ export const FilterBar = ({
       const filtersRecord = updatedFilters.reduce<Record<string, FilterValue>>((accumulator, filter) => {
         if (filter.value !== null && filter.value !== undefined && filter.value !== "") {
           if (filter.config.type === "daterange" && typeof filter.value === "object") {
-            const rangeValue = filter.value as { endDate?: string | null; startDate?: string | null; };
+            const rangeValue = filter.value as { endDate?: string | null; startDate?: string | null };
 
             if (Boolean(rangeValue.startDate) || Boolean(rangeValue.endDate)) {
               accumulator[filter.config.key] = filter.value;
@@ -99,8 +102,12 @@ export const FilterBar = ({
 
   const addFilter = (config: FilterConfig) => {
     const getDefaultValue = () => {
-      if (config.defaultValue !== undefined) {return config.defaultValue;}
-      if (config.type === "daterange") {return { endDate: undefined, startDate: undefined };}
+      if (config.defaultValue !== undefined) {
+        return config.defaultValue;
+      }
+      if (config.type === "daterange") {
+        return { endDate: undefined, startDate: undefined };
+      }
 
       return "";
     };

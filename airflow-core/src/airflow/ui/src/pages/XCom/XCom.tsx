@@ -23,7 +23,6 @@ import { Link as RouterLink, useParams, useSearchParams } from "react-router-dom
 
 import { useXcomServiceGetXcomEntries } from "openapi/queries";
 import type { XComResponse } from "openapi/requests/types.gen";
-import type { DateRangeValue } from "src/components/FilterBar";
 import { DataTable } from "src/components/DataTable";
 import { useTableURLState } from "src/components/DataTable/useTableUrlState";
 import { ErrorAlert } from "src/components/ErrorAlert";
@@ -122,49 +121,20 @@ export const XCom = () => {
   const filteredRunId = searchParams.get(RUN_ID_PATTERN_PARAM);
   const filteredTaskId = searchParams.get(TASK_ID_PATTERN_PARAM);
 
-  const { LOGICAL_DATE_RANGE, RUN_AFTER_RANGE } = SearchParamsKeys;
+  const { LOGICAL_DATE_GTE, LOGICAL_DATE_LTE, RUN_AFTER_GTE, RUN_AFTER_LTE } = SearchParamsKeys;
 
-  const logicalDateRange = searchParams.get(LOGICAL_DATE_RANGE);
-  const runAfterRange = searchParams.get(RUN_AFTER_RANGE);
-
-  const parseLogicalDateRange = (): { gte?: string; lte?: string } => {
-    if (!logicalDateRange) {return {};}
-    try {
-      const range = JSON.parse(logicalDateRange) as DateRangeValue;
-
-      return {
-        gte: range.startDate ?? undefined,
-        lte: range.endDate ?? undefined,
-      };
-    } catch {
-      return {};
-    }
-  };
-
-  const parseRunAfterRange = (): { gte?: string; lte?: string } => {
-    if (!runAfterRange) {return {};}
-    try {
-      const range = JSON.parse(runAfterRange) as DateRangeValue;
-
-      return {
-        gte: range.startDate ?? undefined,
-        lte: range.endDate ?? undefined,
-      };
-    } catch {
-      return {};
-    }
-  };
-
-  const logicalDateParsed = parseLogicalDateRange();
-  const runAfterParsed = parseRunAfterRange();
+  const logicalDateGte = searchParams.get(LOGICAL_DATE_GTE);
+  const logicalDateLte = searchParams.get(LOGICAL_DATE_LTE);
+  const runAfterGte = searchParams.get(RUN_AFTER_GTE);
+  const runAfterLte = searchParams.get(RUN_AFTER_LTE);
 
   const apiParams = {
     dagDisplayNamePattern: filteredDagDisplayName ?? undefined,
     dagId,
     dagRunId: runId,
     limit: pagination.pageSize,
-    logicalDateGte: logicalDateParsed.gte,
-    logicalDateLte: logicalDateParsed.lte,
+    logicalDateGte: logicalDateGte ?? undefined,
+    logicalDateLte: logicalDateLte ?? undefined,
     mapIndex:
       filteredMapIndex !== null && filteredMapIndex !== ""
         ? parseInt(filteredMapIndex, 10)
@@ -172,8 +142,8 @@ export const XCom = () => {
           ? undefined
           : parseInt(mapIndex, 10),
     offset: pagination.pageIndex * pagination.pageSize,
-    runAfterGte: runAfterParsed.gte,
-    runAfterLte: runAfterParsed.lte,
+    runAfterGte: runAfterGte ?? undefined,
+    runAfterLte: runAfterLte ?? undefined,
     runIdPattern: filteredRunId ?? undefined,
     taskId,
     taskIdPattern: filteredTaskId ?? undefined,

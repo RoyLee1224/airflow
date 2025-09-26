@@ -24,6 +24,40 @@ import type { FilterValue, DateRangeValue } from "src/components/FilterBar";
 import { useFilterConfigs } from "src/constants/filterConfigs";
 import { SearchParamsKeys } from "src/constants/searchParams";
 
+const isNonEmptyString = (value: string | null | undefined): value is string =>
+  value !== null && value !== undefined && value !== "";
+
+const isValidDateRangeValue = (value: DateRangeValue): boolean =>
+  isNonEmptyString(value.startDate) || isNonEmptyString(value.endDate);
+
+const handleLogicalDateRange = (newParams: URLSearchParams, rangeValue: DateRangeValue) => {
+  newParams.delete(SearchParamsKeys.LOGICAL_DATE_RANGE as string);
+  if (isNonEmptyString(rangeValue.startDate)) {
+    newParams.set(SearchParamsKeys.LOGICAL_DATE_GTE, rangeValue.startDate);
+  } else {
+    newParams.delete(SearchParamsKeys.LOGICAL_DATE_GTE);
+  }
+  if (isNonEmptyString(rangeValue.endDate)) {
+    newParams.set(SearchParamsKeys.LOGICAL_DATE_LTE, rangeValue.endDate);
+  } else {
+    newParams.delete(SearchParamsKeys.LOGICAL_DATE_LTE);
+  }
+};
+
+const handleRunAfterRange = (newParams: URLSearchParams, rangeValue: DateRangeValue) => {
+  newParams.delete(SearchParamsKeys.RUN_AFTER_RANGE as string);
+  if (isNonEmptyString(rangeValue.startDate)) {
+    newParams.set(SearchParamsKeys.RUN_AFTER_GTE, rangeValue.startDate);
+  } else {
+    newParams.delete(SearchParamsKeys.RUN_AFTER_GTE);
+  }
+  if (isNonEmptyString(rangeValue.endDate)) {
+    newParams.set(SearchParamsKeys.RUN_AFTER_LTE, rangeValue.endDate);
+  } else {
+    newParams.delete(SearchParamsKeys.RUN_AFTER_LTE);
+  }
+};
+
 export type FilterableSearchParamsKeys =
   | SearchParamsKeys.AFTER
   | SearchParamsKeys.BEFORE
@@ -58,6 +92,7 @@ export const useFiltersHandler = (searchParamKeys: Array<FilterableSearchParamsK
   const [searchParams, setSearchParams] = useSearchParams();
   const { setTableURLState, tableURLState } = useTableURLState();
   const { pagination, sorting } = tableURLState;
+
   const handleFiltersChange = useCallback(
     (filters: Record<string, FilterValue>) => {
       setTableURLState({
@@ -73,13 +108,31 @@ export const useFiltersHandler = (searchParamKeys: Array<FilterableSearchParamsK
 
           if (value === null || value === undefined || value === "") {
             newParams.delete(config.key);
+            if (config.key === SearchParamsKeys.LOGICAL_DATE_RANGE as string) {
+              newParams.delete(SearchParamsKeys.LOGICAL_DATE_GTE);
+              newParams.delete(SearchParamsKeys.LOGICAL_DATE_LTE);
+            }
+            if (config.key === SearchParamsKeys.RUN_AFTER_RANGE as string) {
+              newParams.delete(SearchParamsKeys.RUN_AFTER_GTE);
+              newParams.delete(SearchParamsKeys.RUN_AFTER_LTE);
+            }
           } else if (config.type === "daterange" && typeof value === "object") {
             const rangeValue = value as DateRangeValue;
 
-            if ((rangeValue.startDate !== null && rangeValue.startDate !== undefined && rangeValue.startDate !== "") || (rangeValue.endDate !== null && rangeValue.endDate !== undefined && rangeValue.endDate !== "")) {
-              newParams.set(config.key, JSON.stringify(rangeValue));
+            if (isValidDateRangeValue(rangeValue)) {
+              if (config.key === SearchParamsKeys.LOGICAL_DATE_RANGE as string) {
+                handleLogicalDateRange(newParams, rangeValue);
+              } else if (config.key === SearchParamsKeys.RUN_AFTER_RANGE as string) {
+                handleRunAfterRange(newParams, rangeValue);
+              } else {
+                newParams.set(config.key, JSON.stringify(rangeValue));
+              }
             } else {
               newParams.delete(config.key);
+              if (config.key === SearchParamsKeys.LOGICAL_DATE_RANGE as string) {
+                newParams.delete(SearchParamsKeys.LOGICAL_DATE_GTE);
+                newParams.delete(SearchParamsKeys.LOGICAL_DATE_LTE);
+              }
             }
           } else {
             newParams.set(config.key, typeof value === "object" ? JSON.stringify(value) : String(value));

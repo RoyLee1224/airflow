@@ -26,6 +26,7 @@ import { Popover } from "src/components/ui";
 
 import { FilterPill } from "../FilterPill";
 import type { DateRangeValue, FilterPluginProps } from "../types";
+import { isValidDateValue } from "../utils";
 import { DateRangeCalendar } from "./DateRangeCalendar";
 
 type DateSelection = "end" | "start" | undefined;
@@ -35,12 +36,11 @@ export const DateRangeFilter = ({ filter, onChange, onRemove }: FilterPluginProp
   const value = (filter.value !== null && filter.value !== undefined && typeof filter.value === 'object')
     ? (filter.value as DateRangeValue)
     : { endDate: undefined, startDate: undefined };
-  const hasStartDate = Boolean(
-    value.startDate !== null && value.startDate !== undefined && String(value.startDate).trim() !== "",
-  );
-  const hasEndDate = Boolean(
-    value.endDate !== null && value.endDate !== undefined && String(value.endDate).trim() !== "",
-  );
+
+  const startDateValue = isValidDateValue(value.startDate) ? dayjs(value.startDate) : undefined;
+  const endDateValue = isValidDateValue(value.endDate) ? dayjs(value.endDate) : undefined;
+  const hasStartDate = Boolean(startDateValue);
+  const hasEndDate = Boolean(endDateValue);
   const hasValue = hasStartDate || hasEndDate;
 
   const [currentMonth, setCurrentMonth] = useState(() => dayjs());
@@ -49,31 +49,22 @@ export const DateRangeFilter = ({ filter, onChange, onRemove }: FilterPluginProp
   const [endDateInput, setEndDateInput] = useState("");
 
   useEffect(() => {
-    if (hasStartDate && !startDateInput) {
-      setStartDateInput(dayjs(value.startDate).format("YYYY/MM/DD"));
+    if (startDateValue && !startDateInput) {
+      setStartDateInput(startDateValue.format("YYYY/MM/DD"));
     }
-    if (hasEndDate && !endDateInput) {
-      setEndDateInput(dayjs(value.endDate).format("YYYY/MM/DD"));
+    if (endDateValue && !endDateInput) {
+      setEndDateInput(endDateValue.format("YYYY/MM/DD"));
     }
-  }, [value.startDate, value.endDate, hasStartDate, hasEndDate, startDateInput, endDateInput]);
+  }, [startDateValue, endDateValue, startDateInput, endDateInput]);
 
   const formatDisplayValue = () => {
-    if (!hasValue) {
-      return "";
+    if (!startDateValue && !endDateValue) {return "";}
+    if (startDateValue && endDateValue) {
+      return `${startDateValue.format("MMM DD, YYYY")} - ${endDateValue.format("MMM DD, YYYY")}`;
     }
+    if (startDateValue) {return `From ${startDateValue.format("MMM DD, YYYY")}`;}
 
-    const startFormatted = hasStartDate ? dayjs(value.startDate).format("MMM DD, YYYY") : "";
-    const endFormatted = hasEndDate ? dayjs(value.endDate).format("MMM DD, YYYY") : "";
-
-    if (hasStartDate && hasEndDate) {
-      return `${startFormatted} - ${endFormatted}`;
-    } else if (hasStartDate) {
-      return `From ${startFormatted}`;
-    } else if (hasEndDate) {
-      return `To ${endFormatted}`;
-    }
-
-    return "";
+    return `To ${endDateValue?.format("MMM DD, YYYY") ?? ""}`;
   };
 
   const handleDateClick = (date: dayjs.Dayjs) => {
@@ -87,16 +78,13 @@ export const DateRangeFilter = ({ filter, onChange, onRemove }: FilterPluginProp
       setStartDateInput(date.format("YYYY/MM/DD"));
       setDateSelection("end");
     } else if (dateSelection === "end" || hasStartDate) {
-      const startDate =
-        value.startDate !== null && value.startDate !== undefined ? dayjs(value.startDate) : undefined;
-
-      if (startDate && date.isBefore(startDate)) {
+      if (startDateValue && date.isBefore(startDateValue)) {
         onChange({
           endDate: value.startDate,
           startDate: dateStr,
         });
         setStartDateInput(date.format("YYYY/MM/DD"));
-        setEndDateInput(startDate.format("YYYY/MM/DD"));
+        setEndDateInput(startDateValue.format("YYYY/MM/DD"));
       } else {
         onChange({
           ...value,
@@ -160,15 +148,15 @@ export const DateRangeFilter = ({ filter, onChange, onRemove }: FilterPluginProp
             fontSize="sm"
             fontWeight="medium"
             onBlur={() => {
-              if (hasStartDate && startDateInput && !dayjs(startDateInput, "YYYY/MM/DD", true).isValid()) {
-                setStartDateInput(dayjs(value.startDate).format("YYYY/MM/DD"));
+              if (startDateValue && startDateInput && !dayjs(startDateInput, "YYYY/MM/DD", true).isValid()) {
+                setStartDateInput(startDateValue.format("YYYY/MM/DD"));
               }
             }}
             onChange={handleStartDateInputChange}
             onFocus={() => setDateSelection("start")}
             p={0}
             placeholder="YYYY/MM/DD"
-            value={startDateInput || (hasStartDate ? dayjs(value.startDate).format("YYYY/MM/DD") : "")}
+            value={startDateInput || (startDateValue ? startDateValue.format("YYYY/MM/DD") : "")}
           />
         </Box>
         <Box
@@ -188,15 +176,15 @@ export const DateRangeFilter = ({ filter, onChange, onRemove }: FilterPluginProp
             fontSize="sm"
             fontWeight="medium"
             onBlur={() => {
-              if (hasEndDate && endDateInput && !dayjs(endDateInput, "YYYY/MM/DD", true).isValid()) {
-                setEndDateInput(dayjs(value.endDate).format("YYYY/MM/DD"));
+              if (endDateValue && endDateInput && !dayjs(endDateInput, "YYYY/MM/DD", true).isValid()) {
+                setEndDateInput(endDateValue.format("YYYY/MM/DD"));
               }
             }}
             onChange={handleEndDateInputChange}
             onFocus={() => setDateSelection("end")}
             p={0}
             placeholder="YYYY/MM/DD"
-            value={endDateInput || (hasEndDate ? dayjs(value.endDate).format("YYYY/MM/DD") : "")}
+            value={endDateInput || (endDateValue ? endDateValue.format("YYYY/MM/DD") : "")}
           />
         </Box>
       </HStack>

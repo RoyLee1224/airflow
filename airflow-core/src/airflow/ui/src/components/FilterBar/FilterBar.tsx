@@ -31,11 +31,12 @@ import { NumberFilter } from "./filters/NumberFilter";
 import { SelectFilter } from "./filters/SelectFilter";
 import { TextSearchFilter } from "./filters/TextSearchFilter";
 import type { FilterBarProps, FilterConfig, FilterState, FilterValue } from "./types";
+import { getDefaultFilterValue, isValidFilterValue } from "./utils";
 
 const defaultInitialValues: Record<string, FilterValue> = {};
 
 const getFilterIcon = (config: FilterConfig): React.ReactNode =>
-  config.icon ?? getDefaultFilterIcon(config.type);
+  config.icon ?? getDefaultFilterIcon(config.type) ?? null;
 
 export const FilterBar = ({
   configs,
@@ -46,17 +47,10 @@ export const FilterBar = ({
   const { t: translate } = useTranslation(["admin", "common"]);
   const [filters, setFilters] = useState<Array<FilterState>>(() =>
     Object.entries(initialValues)
-      .filter(([, value]) => {
-        if (value === null || value === undefined || value === "") {
-          return false;
-        }
-        if (typeof value === "object") {
-          const rangeValue = value as { endDate?: string | null; startDate?: string | null };
+      .filter(([key, value]) => {
+        const config = configs.find((filterConfig) => filterConfig.key === key);
 
-          return Boolean(rangeValue.startDate) || Boolean(rangeValue.endDate);
-        }
-
-        return true;
+        return config && isValidFilterValue(config.type, value);
       })
       .map(([key, value]) => {
         const config = configs.find((con) => con.key === key);
@@ -80,16 +74,8 @@ export const FilterBar = ({
   const updateFiltersRecord = useCallback(
     (updatedFilters: Array<FilterState>) => {
       const filtersRecord = updatedFilters.reduce<Record<string, FilterValue>>((accumulator, filter) => {
-        if (filter.value !== null && filter.value !== undefined && filter.value !== "") {
-          if (filter.config.type === "daterange" && typeof filter.value === "object") {
-            const rangeValue = filter.value as { endDate?: string | null; startDate?: string | null };
-
-            if (Boolean(rangeValue.startDate) || Boolean(rangeValue.endDate)) {
-              accumulator[filter.config.key] = filter.value;
-            }
-          } else {
-            accumulator[filter.config.key] = filter.value;
-          }
+        if (isValidFilterValue(filter.config.type, filter.value)) {
+          accumulator[filter.config.key] = filter.value;
         }
 
         return accumulator;
@@ -101,21 +87,10 @@ export const FilterBar = ({
   );
 
   const addFilter = (config: FilterConfig) => {
-    const getDefaultValue = () => {
-      if (config.defaultValue !== undefined) {
-        return config.defaultValue;
-      }
-      if (config.type === "daterange") {
-        return { endDate: undefined, startDate: undefined };
-      }
-
-      return "";
-    };
-
     const newFilter: FilterState = {
       config,
       id: `${config.key}-${Date.now()}`,
-      value: getDefaultValue(),
+      value: getDefaultFilterValue(config),
     };
 
     const updatedFilters = [...filters, newFilter];

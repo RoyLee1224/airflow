@@ -19,8 +19,8 @@
 import type React from "react";
 
 export type DateRangeValue = {
-  endDate?: string | null;
-  startDate?: string | null;
+  endDate?: string;
+  startDate?: string;
 };
 
 export type FilterValue = Date | DateRangeValue | number | string | null | undefined;

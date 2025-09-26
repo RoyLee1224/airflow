@@ -20,9 +20,27 @@ import { VStack } from "@chakra-ui/react";
 import { useMemo } from "react";
 import { useParams } from "react-router-dom";
 
-import { FilterBar, type FilterValue, type DateRangeValue } from "src/components/FilterBar";
+import { FilterBar, type FilterValue, type DateRangeValue, type FilterConfig } from "src/components/FilterBar";
 import { SearchParamsKeys } from "src/constants/searchParams";
 import { useFiltersHandler, type FilterableSearchParamsKeys } from "src/utils";
+
+const processGenericValue = (config: FilterConfig, value: string): FilterValue => {
+  if (config.type === "number") {
+    const parsedValue = Number(value);
+
+    return isNaN(parsedValue) ? value : parsedValue;
+  }
+
+  if (config.type === "daterange") {
+    try {
+      return JSON.parse(value) as DateRangeValue;
+    } catch {
+      return { endDate: undefined, startDate: undefined };
+    }
+  }
+
+  return value;
+};
 
 export const XComFilters = () => {
   const { dagId = "~", mapIndex = "-1", runId = "~", taskId = "~" } = useParams();
@@ -55,52 +73,34 @@ export const XComFilters = () => {
 
   const { filterConfigs, handleFiltersChange, searchParams } = useFiltersHandler(searchParamKeys);
 
-  const processDateRangeValue = (gteKey: string, lteKey: string): DateRangeValue | null => {
-    const gte = searchParams.get(gteKey);
-    const lte = searchParams.get(lteKey);
-
-    if ((gte !== null && gte !== "") || (lte !== null && lte !== "")) {
-      return {
-        endDate: lte ?? undefined,
-        startDate: gte ?? undefined,
-      } as DateRangeValue;
-    }
-
-    return undefined;
-  };
-
-  const processGenericValue = (config: any, value: string): FilterValue => {
-    if (config.type === "number") {
-      const parsedValue = Number(value);
-
-      return isNaN(parsedValue) ? value : parsedValue;
-    }
-
-    if (config.type === "daterange") {
-      try {
-        return JSON.parse(value) as DateRangeValue;
-      } catch {
-        return { endDate: undefined, startDate: undefined };
-      }
-    }
-
-    return value;
-  };
-
   const initialValues = useMemo(() => {
+    const processDateRangeValue = (gteKey: string, lteKey: string): DateRangeValue | undefined => {
+      const gte = searchParams.get(gteKey);
+      const lte = searchParams.get(lteKey);
+
+      if ((gte !== null && gte !== "") || (lte !== null && lte !== "")) {
+        return {
+          endDate: lte ?? undefined,
+          startDate: gte ?? undefined,
+        } as DateRangeValue;
+      }
+
+      return undefined;
+    };
+
     const values: Record<string, FilterValue> = {};
 
     filterConfigs.forEach((config) => {
       if (config.key === SearchParamsKeys.LOGICAL_DATE_RANGE as string) {
         const dateRange = processDateRangeValue(SearchParamsKeys.LOGICAL_DATE_GTE, SearchParamsKeys.LOGICAL_DATE_LTE);
 
-        if (dateRange !== null) {
+        if (dateRange !== undefined) {
           values[config.key] = dateRange;
         }
       } else if (config.key === SearchParamsKeys.RUN_AFTER_RANGE as string) {
         const dateRange = processDateRangeValue(SearchParamsKeys.RUN_AFTER_GTE, SearchParamsKeys.RUN_AFTER_LTE);
 
-        if (dateRange !== null) {
+        if (dateRange !== undefined) {
           values[config.key] = dateRange;
         }
       } else {

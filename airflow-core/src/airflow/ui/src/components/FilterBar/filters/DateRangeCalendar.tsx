@@ -16,11 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { Button, Grid, HStack, Text, VStack } from "@chakra-ui/react";
+import { Button, Grid, HStack, Text, VStack, Box } from "@chakra-ui/react";
 import dayjs, { type Dayjs } from "dayjs";
+import { useMemo } from "react";
 import { MdChevronLeft, MdChevronRight } from "react-icons/md";
 
+import { useCalendarGrid } from "src/hooks/useCalendarGrid";
+
 import type { DateRangeValue } from "../types";
+import { isValidDateValue } from "../utils";
 
 type DateRangeCalendarProps = {
   readonly currentMonth: Dayjs;
@@ -29,33 +33,70 @@ type DateRangeCalendarProps = {
   readonly value: DateRangeValue;
 };
 
+const getDayState = (day: Dayjs, currentMonth: Dayjs, dateRange: { endDate?: Dayjs; startDate?: Dayjs }) => {
+  const isCurrentMonth = day.isSame(currentMonth, "month");
+  const isEnd = Boolean(dateRange.endDate?.isSame(day, "day"));
+  const isInRange = Boolean(
+    dateRange.startDate &&
+      dateRange.endDate &&
+      day.isAfter(dateRange.startDate, "day") &&
+      day.isBefore(dateRange.endDate, "day"),
+  );
+  const isStart = Boolean(dateRange.startDate?.isSame(day, "day"));
+  const isToday = day.isSame(dayjs(), "day");
+
+  return { isCurrentMonth, isEnd, isInRange, isStart, isToday };
+};
+
 export const DateRangeCalendar = ({
   currentMonth,
   onDateClick,
   onMonthChange,
   value,
 }: DateRangeCalendarProps) => {
-  const monthStart = currentMonth.startOf("month");
-  const monthEnd = currentMonth.endOf("month");
-  const startDate = monthStart.startOf("week");
-  const endDate = monthEnd.endOf("week");
+  const { days } = useCalendarGrid(currentMonth);
 
-  const days = [];
-  let day = startDate;
+  const startDateValue = isValidDateValue(value.startDate) ? dayjs(value.startDate) : undefined;
+  const endDateValue = isValidDateValue(value.endDate) ? dayjs(value.endDate) : undefined;
 
-  while (day.isSameOrBefore(endDate, "day")) {
-    days.push(day);
-    day = day.add(1, "day");
-  }
+  const getDateStyles = useMemo(
+    () => (day: Dayjs) => {
+      const state = getDayState(day, currentMonth, { endDate: endDateValue, startDate: startDateValue });
 
-  const startDateValue =
-    value.startDate !== null && value.startDate !== undefined && String(value.startDate).trim() !== ""
-      ? dayjs(value.startDate)
-      : undefined;
-  const endDateValue =
-    value.endDate !== null && value.endDate !== undefined && String(value.endDate).trim() !== ""
-      ? dayjs(value.endDate)
-      : undefined;
+      const getBgColor = () => {
+        if (state.isStart) {
+          return "blue.500";
+        }
+        if (state.isEnd) {
+          return "blue.300";
+        }
+        if (state.isInRange) {
+          return "blue.50";
+        }
+
+        return "transparent";
+      };
+
+      const getTextColor = () => {
+        if (state.isStart || state.isEnd) {
+          return "white";
+        }
+        if (!state.isCurrentMonth) {
+          return "gray.400";
+        }
+
+        return "inherit";
+      };
+
+      return {
+        bgColor: getBgColor(),
+        showTodayIndicator: state.isToday && !state.isStart && !state.isEnd,
+        state,
+        textColor: getTextColor(),
+      };
+    },
+    [currentMonth, startDateValue, endDateValue],
+  );
 
   return (
     <>
@@ -92,51 +133,40 @@ export const DateRangeCalendar = ({
         {/* Calendar Days */}
         <Grid gap={1} gridTemplateColumns="repeat(7, 1fr)" w="full">
           {days.map((dayItem) => {
-            const isCurrentMonth = dayItem.isSame(currentMonth, "month");
-            const isStartSelected = Boolean(startDateValue?.isSame(dayItem, "day"));
-            const isEndSelected = Boolean(endDateValue?.isSame(dayItem, "day"));
-            const isSelected = isStartSelected || isEndSelected;
-            const isInRange =
-              startDateValue &&
-              endDateValue &&
-              dayItem.isAfter(startDateValue, "day") &&
-              dayItem.isBefore(endDateValue, "day");
-            const isToday = dayItem.isSame(dayjs(), "day");
-
-            let bgColor: string | undefined;
-            let textColor = isCurrentMonth ? "inherit" : "gray.400";
-
-            if (isStartSelected) {
-              bgColor = "blue.500";
-              textColor = "white";
-            } else if (isEndSelected) {
-              bgColor = "blue.300";
-              textColor = "white";
-            } else if (isInRange) {
-              bgColor = "blue.50";
-            } else if (isToday) {
-              bgColor = "red.500";
-              textColor = "white";
-            }
+            const styles = getDateStyles(dayItem);
+            const isSelected = styles.state.isStart || styles.state.isEnd;
 
             return (
               <Button
                 _hover={{
-                  bg: isSelected ? bgColor : "gray.100",
+                  bg: isSelected ? styles.bgColor : "gray.100",
                 }}
-                bg={bgColor}
+                bg={styles.bgColor}
                 border="1px solid transparent"
-                color={textColor}
+                color={styles.textColor}
                 fontWeight="normal"
                 h="32px"
                 key={dayItem.format("YYYY-MM-DD")}
                 minW="32px"
                 onClick={() => onDateClick(dayItem)}
                 p={0}
+                position="relative"
                 size="sm"
                 variant="ghost"
               >
                 {dayItem.date()}
+                {Boolean(styles.showTodayIndicator) && (
+                  <Box
+                    bg="red.500"
+                    borderRadius="full"
+                    bottom="1"
+                    height="4px"
+                    left="50%"
+                    position="absolute"
+                    transform="translateX(-50%)"
+                    width="4px"
+                  />
+                )}
               </Button>
             );
           })}

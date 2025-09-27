@@ -41,7 +41,11 @@ export const FilterPill = ({
   onChange,
   onRemove,
 }: FilterPillProps) => {
-  const isEmpty = filter.value === null || filter.value === undefined || String(filter.value).trim() === "";
+  const isEmpty =
+    filter.value === null ||
+    filter.value === undefined ||
+    (typeof filter.value === "string" && filter.value.trim() === "") ||
+    (typeof filter.value === "object" && Object.keys(filter.value).length === 0);
   const [isEditing, setIsEditing] = useState(isEmpty);
   const inputRef = useRef<HTMLInputElement>(null);
   const blurTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);

@@ -26,105 +26,113 @@ import { Popover } from "src/components/ui";
 
 import { FilterPill } from "../FilterPill";
 import type { DateRangeValue, FilterPluginProps } from "../types";
-import { isValidDateValue } from "../utils";
+import { isValidDateValue, isValidFilterValue } from "../utils";
 import { DateRangeCalendar } from "./DateRangeCalendar";
 
 type DateSelection = "end" | "start" | undefined;
 
+type EditingState = {
+  currentMonth: dayjs.Dayjs;
+  inputs: {
+    end: string;
+    start: string;
+  };
+  selectionTarget: DateSelection;
+};
+
 export const DateRangeFilter = ({ filter, onChange, onRemove }: FilterPluginProps) => {
   const { t: translate } = useTranslation(["common"]);
-  const value = (filter.value !== null && filter.value !== undefined && typeof filter.value === 'object')
-    ? (filter.value as DateRangeValue)
-    : { endDate: undefined, startDate: undefined };
+  const value =
+    filter.value !== null && filter.value !== undefined && typeof filter.value === "object"
+      ? (filter.value as DateRangeValue)
+      : { endDate: undefined, startDate: undefined };
 
   const startDateValue = isValidDateValue(value.startDate) ? dayjs(value.startDate) : undefined;
   const endDateValue = isValidDateValue(value.endDate) ? dayjs(value.endDate) : undefined;
   const hasStartDate = Boolean(startDateValue);
   const hasEndDate = Boolean(endDateValue);
-  const hasValue = hasStartDate || hasEndDate;
+  const hasValue = isValidFilterValue(filter.config.type, filter.value);
 
-  const [currentMonth, setCurrentMonth] = useState(() => dayjs());
-  const [dateSelection, setDateSelection] = useState<DateSelection>(undefined);
-  const [startDateInput, setStartDateInput] = useState("");
-  const [endDateInput, setEndDateInput] = useState("");
+  const [editingState, setEditingState] = useState<EditingState>(() => ({
+    currentMonth: startDateValue ?? endDateValue ?? dayjs(),
+    inputs: {
+      end: endDateValue?.format("YYYY/MM/DD") ?? "",
+      start: startDateValue?.format("YYYY/MM/DD") ?? "",
+    },
+    selectionTarget: undefined,
+  }));
 
   useEffect(() => {
-    if (startDateValue && !startDateInput) {
-      setStartDateInput(startDateValue.format("YYYY/MM/DD"));
-    }
-    if (endDateValue && !endDateInput) {
-      setEndDateInput(endDateValue.format("YYYY/MM/DD"));
-    }
-  }, [startDateValue, endDateValue, startDateInput, endDateInput]);
+    setEditingState((prev) => ({
+      ...prev,
+      inputs: {
+        end: endDateValue?.format("YYYY/MM/DD") ?? "",
+        start: startDateValue?.format("YYYY/MM/DD") ?? "",
+      },
+    }));
+  }, [startDateValue, endDateValue]);
 
   const formatDisplayValue = () => {
-    if (!startDateValue && !endDateValue) {return "";}
+    if (!startDateValue && !endDateValue) {
+      return "";
+    }
     if (startDateValue && endDateValue) {
       return `${startDateValue.format("MMM DD, YYYY")} - ${endDateValue.format("MMM DD, YYYY")}`;
     }
-    if (startDateValue) {return `From ${startDateValue.format("MMM DD, YYYY")}`;}
+    if (startDateValue) {
+      return `From ${startDateValue.format("MMM DD, YYYY")}`;
+    }
 
     return `To ${endDateValue?.format("MMM DD, YYYY") ?? ""}`;
   };
 
-  const handleDateClick = (date: dayjs.Dayjs) => {
-    const dateStr = date.toISOString();
+  const handleDateClick = (clickedDate: dayjs.Dayjs) => {
+    const newDateStr = clickedDate.toISOString();
+    const currentTarget = editingState.selectionTarget;
 
-    if (dateSelection === "start" || (!hasStartDate && !hasEndDate)) {
-      onChange({
-        ...value,
-        startDate: dateStr,
-      });
-      setStartDateInput(date.format("YYYY/MM/DD"));
-      setDateSelection("end");
-    } else if (dateSelection === "end" || hasStartDate) {
-      if (startDateValue && date.isBefore(startDateValue)) {
-        onChange({
-          endDate: value.startDate,
-          startDate: dateStr,
-        });
-        setStartDateInput(date.format("YYYY/MM/DD"));
-        setEndDateInput(startDateValue.format("YYYY/MM/DD"));
-      } else {
-        onChange({
-          ...value,
-          endDate: dateStr,
-        });
-        setEndDateInput(date.format("YYYY/MM/DD"));
+    let nextTarget: DateSelection = "end";
+    let newStartDate = value.startDate;
+    let newEndDate = value.endDate;
+
+    if (currentTarget === "start" || (!hasStartDate && !hasEndDate)) {
+      newStartDate = newDateStr;
+      if (endDateValue && clickedDate.isAfter(endDateValue)) {
+        newEndDate = undefined;
       }
-      setDateSelection(undefined);
+    } else {
+      newEndDate = newDateStr;
+      if (startDateValue && clickedDate.isBefore(startDateValue)) {
+        newStartDate = newDateStr;
+        newEndDate = value.startDate;
+      }
+      nextTarget = undefined;
     }
+
+    onChange({ endDate: newEndDate, startDate: newStartDate });
+    setEditingState((prev) => ({
+      ...prev,
+      currentMonth: clickedDate,
+      selectionTarget: nextTarget,
+    }));
   };
 
-  const handleStartDateInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (field: "end" | "start") => (event: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = event.target.value;
 
-    setStartDateInput(inputValue);
+    setEditingState((prev) => ({
+      ...prev,
+      inputs: { ...prev.inputs, [field]: inputValue },
+    }));
 
     const parsedDate = dayjs(inputValue, "YYYY/MM/DD", true);
 
     if (parsedDate.isValid()) {
       onChange({
         ...value,
-        startDate: parsedDate.toISOString(),
+        [field === "start" ? "startDate" : "endDate"]: parsedDate.toISOString(),
       });
-      setCurrentMonth(parsedDate);
-    }
-  };
 
-  const handleEndDateInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const inputValue = event.target.value;
-
-    setEndDateInput(inputValue);
-
-    const parsedDate = dayjs(inputValue, "YYYY/MM/DD", true);
-
-    if (parsedDate.isValid()) {
-      onChange({
-        ...value,
-        endDate: parsedDate.toISOString(),
-      });
-      setCurrentMonth(parsedDate);
+      setEditingState((prev) => ({ ...prev, currentMonth: parsedDate }));
     }
   };
 
@@ -133,7 +141,7 @@ export const DateRangeFilter = ({ filter, onChange, onRemove }: FilterPluginProp
       <HStack gap={3} w="full">
         <Box
           border="2px solid"
-          borderColor={dateSelection === "start" ? "blue.500" : "gray.300"}
+          borderColor={editingState.selectionTarget === "start" ? "blue.500" : "gray.300"}
           borderRadius="md"
           flex="1"
           p={2}
@@ -148,20 +156,27 @@ export const DateRangeFilter = ({ filter, onChange, onRemove }: FilterPluginProp
             fontSize="sm"
             fontWeight="medium"
             onBlur={() => {
-              if (startDateValue && startDateInput && !dayjs(startDateInput, "YYYY/MM/DD", true).isValid()) {
-                setStartDateInput(startDateValue.format("YYYY/MM/DD"));
+              if (
+                startDateValue &&
+                editingState.inputs.start &&
+                !dayjs(editingState.inputs.start, "YYYY/MM/DD", true).isValid()
+              ) {
+                setEditingState((prev) => ({
+                  ...prev,
+                  inputs: { ...prev.inputs, start: startDateValue.format("YYYY/MM/DD") },
+                }));
               }
             }}
-            onChange={handleStartDateInputChange}
-            onFocus={() => setDateSelection("start")}
+            onChange={handleInputChange("start")}
+            onFocus={() => setEditingState((prev) => ({ ...prev, selectionTarget: "start" }))}
             p={0}
             placeholder="YYYY/MM/DD"
-            value={startDateInput || (startDateValue ? startDateValue.format("YYYY/MM/DD") : "")}
+            value={editingState.inputs.start}
           />
         </Box>
         <Box
           border="2px solid"
-          borderColor={dateSelection === "end" ? "blue.500" : "gray.300"}
+          borderColor={editingState.selectionTarget === "end" ? "blue.500" : "gray.300"}
           borderRadius="md"
           flex="1"
           p={2}
@@ -176,22 +191,29 @@ export const DateRangeFilter = ({ filter, onChange, onRemove }: FilterPluginProp
             fontSize="sm"
             fontWeight="medium"
             onBlur={() => {
-              if (endDateValue && endDateInput && !dayjs(endDateInput, "YYYY/MM/DD", true).isValid()) {
-                setEndDateInput(endDateValue.format("YYYY/MM/DD"));
+              if (
+                endDateValue &&
+                editingState.inputs.end &&
+                !dayjs(editingState.inputs.end, "YYYY/MM/DD", true).isValid()
+              ) {
+                setEditingState((prev) => ({
+                  ...prev,
+                  inputs: { ...prev.inputs, end: endDateValue.format("YYYY/MM/DD") },
+                }));
               }
             }}
-            onChange={handleEndDateInputChange}
-            onFocus={() => setDateSelection("end")}
+            onChange={handleInputChange("end")}
+            onFocus={() => setEditingState((prev) => ({ ...prev, selectionTarget: "end" }))}
             p={0}
             placeholder="YYYY/MM/DD"
-            value={endDateInput || (endDateValue ? endDateValue.format("YYYY/MM/DD") : "")}
+            value={editingState.inputs.end}
           />
         </Box>
       </HStack>
       <DateRangeCalendar
-        currentMonth={currentMonth}
+        currentMonth={editingState.currentMonth}
         onDateClick={handleDateClick}
-        onMonthChange={setCurrentMonth}
+        onMonthChange={(month) => setEditingState((prev) => ({ ...prev, currentMonth: month }))}
         value={value}
       />
     </VStack>

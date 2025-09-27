@@ -36,7 +36,7 @@ import { getDefaultFilterValue, isValidFilterValue } from "./utils";
 const defaultInitialValues: Record<string, FilterValue> = {};
 
 const getFilterIcon = (config: FilterConfig): React.ReactNode =>
-  config.icon ?? getDefaultFilterIcon(config.type) ?? null;
+  config.icon ?? getDefaultFilterIcon(config.type);
 
 export const FilterBar = ({
   configs,

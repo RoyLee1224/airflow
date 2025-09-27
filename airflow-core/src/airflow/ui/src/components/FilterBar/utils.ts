@@ -21,6 +21,9 @@ import type { DateRangeValue, FilterConfig, FilterValue } from "./types";
 /**
  * Checks if a filter value is valid and non-empty
  */
+export const isValidDateValue = (date?: string | null): boolean =>
+  date !== null && date !== undefined && String(date).trim() !== "";
+
 export const isValidFilterValue = (type: string, value: FilterValue): boolean => {
   if (value === null || value === undefined || value === "") {
     return false;
@@ -29,8 +32,7 @@ export const isValidFilterValue = (type: string, value: FilterValue): boolean =>
   if (type === "daterange" && typeof value === "object") {
     const rangeValue = value as DateRangeValue;
 
-    return Boolean(rangeValue.startDate && String(rangeValue.startDate).trim() !== "") ||
-           Boolean(rangeValue.endDate && String(rangeValue.endDate).trim() !== "");
+    return isValidDateValue(rangeValue.startDate) || isValidDateValue(rangeValue.endDate);
   }
 
   return true;
@@ -54,9 +56,5 @@ export const getDefaultFilterValue = (config: FilterConfig): FilterValue => {
 /**
  * Parses a date string or returns undefined if invalid
  */
-export const parseFilterDate = (date?: string | null) => (date !== null && date !== undefined && String(date).trim() !== "") ? date : undefined;
-
-/**
- * Checks if a date value is valid and non-empty
- */
-export const isValidDateValue = (date?: string | null): boolean => date !== null && date !== undefined && String(date).trim() !== "";
+export const parseFilterDate = (date?: string | null) =>
+  date !== null && date !== undefined && String(date).trim() !== "" ? date : undefined;

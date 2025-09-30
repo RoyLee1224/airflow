@@ -19,15 +19,15 @@
 import { Badge, Flex } from "@chakra-ui/react";
 import type { MouseEvent } from "react";
 import React, { useCallback } from "react";
-import { useTranslation } from "react-i18next";
 import { Link, useLocation, useParams } from "react-router-dom";
 
 import type { LightGridTaskInstanceSummary } from "openapi/requests/types.gen";
+import { HoverTooltip } from "src/components/HoverTooltip";
 import { StateIcon } from "src/components/StateIcon";
-import Time from "src/components/Time";
-import { Tooltip } from "src/components/ui";
 import { type HoverContextType, useHover } from "src/context/hover";
 import { buildTaskInstanceUrl } from "src/utils/links";
+
+import { GridTooltip } from "./GridTooltip";
 
 const handleMouseEnter =
   (setHoveredTaskId: HoverContextType["setHoveredTaskId"]) => (event: MouseEvent<HTMLDivElement>) => {
@@ -65,7 +65,6 @@ type Props = {
 const Instance = ({ dagId, instance, isGroup, isMapped, onClick, runId, search, taskId }: Props) => {
   const { setHoveredTaskId } = useHover();
   const { groupId: selectedGroupId, taskId: selectedTaskId } = useParams();
-  const { t: translate } = useTranslation();
   const location = useLocation();
 
   const onMouseEnter = handleMouseEnter(setHoveredTaskId);
@@ -82,6 +81,13 @@ const Instance = ({ dagId, instance, isGroup, isMapped, onClick, runId, search, 
         taskId,
       }),
     [dagId, isGroup, isMapped, location.pathname, runId, taskId],
+  );
+
+  const renderTooltip = useCallback(
+    (triggerRef: React.RefObject<HTMLElement>) => (
+      <GridTooltip instance={instance} taskId={taskId} triggerRef={triggerRef} />
+    ),
+    [instance, taskId],
   );
 
   return (
@@ -108,27 +114,7 @@ const Instance = ({ dagId, instance, isGroup, isMapped, onClick, runId, search, 
           search,
         }}
       >
-        <Tooltip
-          content={
-            <>
-              {translate("taskId")}: {taskId}
-              <br />
-              {translate("state")}: {instance.state}
-              {instance.min_start_date !== null && (
-                <>
-                  <br />
-                  {translate("startDate")}: <Time datetime={instance.min_start_date} />
-                </>
-              )}
-              {instance.max_end_date !== null && (
-                <>
-                  <br />
-                  {translate("endDate")}: <Time datetime={instance.max_end_date} />
-                </>
-              )}
-            </>
-          }
-        >
+        <HoverTooltip delayMs={200} tooltip={renderTooltip}>
           <Badge
             alignItems="center"
             borderRadius={4}
@@ -143,7 +129,7 @@ const Instance = ({ dagId, instance, isGroup, isMapped, onClick, runId, search, 
           >
             <StateIcon size={10} state={instance.state} />
           </Badge>
-        </Tooltip>
+        </HoverTooltip>
       </Link>
     </Flex>
   );

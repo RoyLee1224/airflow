@@ -16,13 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { Box } from "@chakra-ui/react";
 import { useMemo } from "react";
 import type { RefObject } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { LightGridTaskInstanceSummary } from "openapi/requests/types.gen";
 import Time from "src/components/Time";
+import { BaseTooltip } from "src/components/Tooltip";
 import { getDuration } from "src/utils";
 
 type Props = {
@@ -34,27 +34,6 @@ type Props = {
 export const GridTooltip = ({ instance, taskId, triggerRef }: Props) => {
   const { t: translate } = useTranslation();
 
-  const tooltipStyle = useMemo(() => {
-    if (!triggerRef.current) {
-      return { display: "none" };
-    }
-
-    const rect = triggerRef.current.getBoundingClientRect();
-
-    return {
-      backgroundColor: "var(--chakra-colors-bg-inverted)",
-      borderRadius: "4px",
-      color: "var(--chakra-colors-fg-inverted)",
-      fontSize: "12px",
-      left: `${rect.right + globalThis.scrollX + 4}px`,
-      padding: "8px",
-      position: "absolute" as const,
-      top: `${rect.bottom + globalThis.scrollY}px`,
-      whiteSpace: "nowrap" as const,
-      zIndex: 1000,
-    };
-  }, [triggerRef]);
-
   const duration = useMemo(() => {
     if (instance.min_start_date === null || instance.max_end_date === null) {
       return undefined;
@@ -64,7 +43,7 @@ export const GridTooltip = ({ instance, taskId, triggerRef }: Props) => {
   }, [instance.min_start_date, instance.max_end_date]);
 
   return (
-    <Box style={tooltipStyle}>
+    <BaseTooltip fontSize="12px" position="bottom-center" triggerRef={triggerRef}>
       <strong>{translate("taskId")}:</strong> {taskId}
       <br />
       <strong>{translate("state")}:</strong> {instance.state ?? "no_status"}
@@ -96,6 +75,6 @@ export const GridTooltip = ({ instance, taskId, triggerRef }: Props) => {
             .join(", ")}
         </>
       )}
-    </Box>
+    </BaseTooltip>
   );
 };

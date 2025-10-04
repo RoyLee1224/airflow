@@ -28,7 +28,7 @@ import { FilterPill } from "../FilterPill";
 import type { DateRangeValue, FilterPluginProps } from "../types";
 import { isValidDateValue, isValidFilterValue } from "../utils";
 import { DateRangeCalendar } from "./DateRangeCalendar";
-import { DateRangeInputs } from "./DateRangeInputs";
+import { DateTimeRangeInputs } from "./DateTimeRangeInputs";
 
 export const DateRangeFilter = ({ filter, onChange, onRemove }: FilterPluginProps) => {
   const { t: translate } = useTranslation(["common"]);
@@ -41,8 +41,14 @@ export const DateRangeFilter = ({ filter, onChange, onRemove }: FilterPluginProp
   const endDateValue = isValidDateValue(value.endDate) ? dayjs(value.endDate) : undefined;
   const hasValue = isValidFilterValue(filter.config.type, filter.value);
 
-  const { editingState, formatDisplayValue, handleDateClick, handleInputChange, setEditingState } =
-    useDateRangeFilter({ onChange, value });
+  const {
+    editingState,
+    formatDisplayValue,
+    handleDateClick,
+    handleInputChange,
+    setEditingState,
+    toggleTimeMode,
+  } = useDateRangeFilter({ onChange, value });
 
   return (
     <FilterPill
@@ -114,14 +120,15 @@ export const DateRangeFilter = ({ filter, onChange, onRemove }: FilterPluginProp
             </HStack>
           </Box>
         </Popover.Trigger>
-        <Popover.Content p={3} w="300px">
+        <Popover.Content p={3} w="320px">
           <VStack gap={4} w="full">
-            <DateRangeInputs
+            <DateTimeRangeInputs
               editingState={editingState}
               endDateValue={endDateValue}
               onChange={handleInputChange}
               onClearEnd={() => onChange({ ...value, endDate: undefined })}
               onClearStart={() => onChange({ ...value, startDate: undefined })}
+              onToggleTimeMode={toggleTimeMode}
               setEditingState={setEditingState}
               setSelectionTarget={(target) =>
                 setEditingState((prev) => ({ ...prev, selectionTarget: target }))

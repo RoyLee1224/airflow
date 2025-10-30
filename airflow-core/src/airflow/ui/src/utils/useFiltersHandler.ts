@@ -59,7 +59,10 @@ const handleDateRangeChange = (
 export type FilterableSearchParamsKeys =
   | SearchParamsKeys.AFTER
   | SearchParamsKeys.BEFORE
+  | SearchParamsKeys.BODY_SEARCH
   | SearchParamsKeys.CONF_CONTAINS
+  | SearchParamsKeys.CREATED_AT_GTE
+  | SearchParamsKeys.CREATED_AT_LTE
   | SearchParamsKeys.DAG_DISPLAY_NAME_PATTERN
   | SearchParamsKeys.DAG_ID
   | SearchParamsKeys.DAG_ID_PATTERN
@@ -73,6 +76,7 @@ export type FilterableSearchParamsKeys =
   | SearchParamsKeys.LOGICAL_DATE_LTE
   | SearchParamsKeys.LOGICAL_DATE_RANGE
   | SearchParamsKeys.MAP_INDEX
+  | SearchParamsKeys.RESPONDED_BY_USER_NAME
   | SearchParamsKeys.RESPONSE_RECEIVED
   | SearchParamsKeys.RUN_AFTER_GTE
   | SearchParamsKeys.RUN_AFTER_LTE
@@ -82,6 +86,7 @@ export type FilterableSearchParamsKeys =
   | SearchParamsKeys.RUN_TYPE
   | SearchParamsKeys.START_DATE
   | SearchParamsKeys.STATE
+  | SearchParamsKeys.SUBJECT_SEARCH
   | SearchParamsKeys.TASK_ID
   | SearchParamsKeys.TASK_ID_PATTERN
   | SearchParamsKeys.TRIGGERING_USER_NAME_PATTERN

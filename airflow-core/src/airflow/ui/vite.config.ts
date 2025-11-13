@@ -39,6 +39,16 @@ export default defineConfig({
   resolve: { alias: { openapi: "/openapi-gen", src: "/src" } },
   server: {
     cors: true, // Only used by the dev server.
+    proxy: {
+      "/api": {
+        changeOrigin: true,
+        target: "http://localhost:28080",
+      },
+      "/ui": {
+        changeOrigin: true,
+        target: "http://localhost:28080",
+      },
+    },
   },
   test: {
     coverage: {

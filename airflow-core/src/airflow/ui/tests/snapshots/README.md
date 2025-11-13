@@ -35,11 +35,9 @@ Manually updating documentation screenshots is time-consuming and error-prone. T
 ```
 tests/snapshots/
 ├── README.md                 # This file
-├── fixtures/
-│   └── mockData.ts          # Realistic mock data for screenshots
+├── SCREENSHOT_MAPPING.md    # Maps screenshots to test files
 ├── helpers/
-│   ├── screenshot.ts        # Screenshot utilities
-│   └── mockRoutes.ts        # API mock route setup
+│   └── screenshot.ts        # Screenshot utilities
 ├── dagsList.spec.ts         # DAGs list page screenshots
 ├── dagDetails.spec.ts       # DAG details page screenshots
 └── ... (more test files)
@@ -49,15 +47,25 @@ tests/snapshots/
 
 ### Prerequisites
 
+The UI dev server requires a running Airflow backend to provide API data. Use Breeze to start the backend:
+
+```bash
+# Start Breeze with dev mode (from airflow root directory)
+breeze start-airflow --dev-mode
+```
+
+This will start the Airflow backend API server on port 28080 (by default).
+
+Then install Playwright dependencies:
+
 ```bash
 # Install dependencies (including Playwright browsers)
+cd airflow-core/src/airflow/ui
 pnpm install
 pnpm exec playwright install
 ```
 
 ### Generate All Screenshots
-
-#### Option 1: Standalone (Breeze NOT running)
 
 ```bash
 # Generate screenshots for both light and dark themes
@@ -67,16 +75,11 @@ pnpm screenshots
 pnpm exec playwright test tests/snapshots
 ```
 
-#### Option 2: Using Breeze's Dev Server (Breeze IS running)
-
-If you have `breeze start-airflow --dev-mode` running:
-
-```bash
-# Skip starting a new dev server, use Breeze's UI
-SKIP_WEBSERVER=true PLAYWRIGHT_BASE_URL=http://localhost:28080 pnpm screenshots
-```
-
-> **Note**: Adjust the port (28080) to match your Breeze UI port mapping. Check with `breeze start-airflow --help` or your breeze logs.
+The test runner will:
+1. Automatically start the Vite dev server on port 5173
+2. The dev server proxies API requests to your Breeze backend (port 28080)
+3. Run Playwright tests to capture screenshots
+4. Save screenshots to `docs/img/ui-light/` and `docs/img/ui-dark/`
 
 ### Generate Screenshots for Specific Theme
 
@@ -108,19 +111,18 @@ These directories are relative to the project root (`airflow-core/`).
 
 ## Adding New Screenshots
 
-### 1. Create a new test file
+### 1. Prepare test data in Breeze
+
+Ensure your Breeze environment has the necessary test data (DAGs, connections, variables, etc.) that you want to capture in screenshots.
+
+### 2. Create a new test file
 
 ```typescript
 // tests/snapshots/myFeature.spec.ts
 import { test, expect } from "@playwright/test";
-import { setupMockRoutes } from "./helpers/mockRoutes";
 import { takeDocScreenshot, waitForAppReady } from "./helpers/screenshot";
 
 test.describe("My Feature Screenshots", () => {
-  test.beforeEach(async ({ page }) => {
-    await setupMockRoutes(page);
-  });
-
   test("captures my feature", async ({ page }, testInfo) => {
     await page.goto("/my-feature");
     await waitForAppReady(page);
@@ -140,31 +142,7 @@ test.describe("My Feature Screenshots", () => {
 });
 ```
 
-### 2. Add mock data (if needed)
-
-Update `fixtures/mockData.ts` with realistic data:
-
-```typescript
-export const mockMyFeature = {
-  // ... your mock data
-};
-```
-
-### 3. Add mock routes (if needed)
-
-Update `helpers/mockRoutes.ts`:
-
-```typescript
-await page.route("**/ui/my-endpoint", async (route) => {
-  await route.fulfill({
-    status: 200,
-    contentType: "application/json",
-    body: JSON.stringify(mockMyFeature),
-  });
-});
-```
-
-### 4. Run and verify
+### 3. Run and verify
 
 ```bash
 pnpm screenshots
@@ -191,7 +169,7 @@ The `takeDocScreenshot` helper accepts these options:
 
 ## Best Practices
 
-1. **Use realistic mock data** - Screenshots should represent real-world usage
+1. **Use realistic test data** - Ensure Breeze has realistic DAGs and data for screenshots
 2. **Wait for rendering** - Use `waitForAppReady()` and add extra wait time for animations
 3. **Consistent viewports** - Use standard sizes (1280x800, 1280x900)
 4. **Test coverage** - Each screenshot test also validates page rendering
@@ -202,14 +180,16 @@ The `takeDocScreenshot` helper accepts these options:
 ### Screenshots are blank or incomplete
 
 - Increase `additionalWaitTime` in screenshot options
-- Ensure mock routes are properly set up
+- Ensure Breeze backend is running and accessible on port 28080
 - Check that selectors are correct
+- Verify the UI can load data from the backend
 
 ### Tests timing out
 
 - Increase timeout in `playwright.config.ts`
-- Check that the dev server is running
-- Verify mock data is returning correctly
+- Check that the dev server and Breeze backend are both running
+- Verify the backend API is responding (check Network tab in browser)
+- Ensure no port conflicts (5173 for UI, 28080 for backend)
 
 ### Different appearance in CI vs local
 

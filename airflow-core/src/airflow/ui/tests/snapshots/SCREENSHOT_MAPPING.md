@@ -90,10 +90,10 @@ Based on analysis of `docs/ui.rst` and other documentation files, these screensh
 
 When adding a new screenshot test:
 
-1. Create or update the appropriate test file in `tests/snapshots/`
-2. Use the `takeDocScreenshot` helper with appropriate options
-3. Update this mapping document with the new screenshot
-4. Ensure mock data is realistic and matches documentation examples
+1. Ensure your Breeze environment has the necessary test data
+2. Create or update the appropriate test file in `tests/snapshots/`
+3. Use the `takeDocScreenshot` helper with appropriate options
+4. Update this mapping document with the new screenshot
 5. Test both light and dark themes (automatic with current setup)
 
 ## Notes
@@ -101,4 +101,4 @@ When adding a new screenshot test:
 - All screenshots are automatically generated for both light and dark themes
 - Screenshots are saved to `docs/img/ui-light/` and `docs/img/ui-dark/`
 - Test names should be descriptive and match the screenshot purpose
-- Mock data should represent realistic, production-like scenarios
+- Tests use real data from the Breeze backend environment

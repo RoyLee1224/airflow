@@ -1,1 +1,8 @@
 openapi.merged.json
+
+# Playwright
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+test-results/
+

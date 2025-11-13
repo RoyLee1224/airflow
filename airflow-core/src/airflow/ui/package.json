@@ -16,7 +16,11 @@
     "preview": "vite preview",
     "codegen": "openapi-merge-cli && openapi-rq -i openapi.merged.json -c axios --format prettier -o openapi-gen --operationId",
     "test": "vitest run",
-    "coverage": "vitest run --coverage"
+    "coverage": "vitest run --coverage",
+    "screenshots": "playwright test tests/snapshots",
+    "screenshots:light": "playwright test tests/snapshots --project=light-theme-desktop",
+    "screenshots:dark": "playwright test tests/snapshots --project=dark-theme-desktop",
+    "screenshots:debug": "playwright test tests/snapshots --headed --debug"
   },
   "dependencies": {
     "@chakra-ui/anatomy": "^2.3.4",
@@ -72,6 +76,7 @@
     "@7nohe/openapi-react-query-codegen": "^1.6.2",
     "@eslint/compat": "^1.2.9",
     "@eslint/js": "^9.25.1",
+    "@playwright/test": "^1.56.1",
     "@stylistic/eslint-plugin": "^2.13.0",
     "@tanstack/eslint-plugin-query": "^5.74.7",
     "@testing-library/jest-dom": "^6.6.3",

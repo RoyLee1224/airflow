@@ -57,6 +57,8 @@ pnpm exec playwright install
 
 ### Generate All Screenshots
 
+#### Option 1: Standalone (Breeze NOT running)
+
 ```bash
 # Generate screenshots for both light and dark themes
 pnpm screenshots
@@ -64,6 +66,17 @@ pnpm screenshots
 # Or use Playwright directly
 pnpm exec playwright test tests/snapshots
 ```
+
+#### Option 2: Using Breeze's Dev Server (Breeze IS running)
+
+If you have `breeze start-airflow --dev-mode` running:
+
+```bash
+# Skip starting a new dev server, use Breeze's UI
+SKIP_WEBSERVER=true PLAYWRIGHT_BASE_URL=http://localhost:28080 pnpm screenshots
+```
+
+> **Note**: Adjust the port (28080) to match your Breeze UI port mapping. Check with `breeze start-airflow --help` or your breeze logs.
 
 ### Generate Screenshots for Specific Theme
 

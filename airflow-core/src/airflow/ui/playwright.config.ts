@@ -41,7 +41,7 @@ export default defineConfig({
   // Shared settings for all the projects
   use: {
     // Base URL to use in actions like `await page.goto('/')`
-    baseURL: "http://127.0.0.1:5173",
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || "http://127.0.0.1:5173",
     // Collect trace when retrying the failed test
     trace: "on-first-retry",
     // Screenshots on failure
@@ -69,9 +69,9 @@ export default defineConfig({
   ],
 
   // Run your local dev server before starting the tests
-  webServer: {
+  webServer: process.env.SKIP_WEBSERVER ? undefined : {
     command: "pnpm dev",
-    url: "http://127.0.0.1:5173",
+    url: process.env.PLAYWRIGHT_BASE_URL || "http://127.0.0.1:5173",
     // Reuse existing server in local dev, start fresh in CI
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,

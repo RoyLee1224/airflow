@@ -22,6 +22,14 @@ export const handlers: Array<HttpHandler> = [
   // Auth menus endpoint
   http.get("/ui/auth/menus", () =>
     HttpResponse.json({
+      authorized_menu_items: [
+        "Dags",
+        "Assets",
+        "Browse",
+        "Admin",
+        "Docs",
+        "Security",
+      ],
       menu_items: [
         {
           name: "DAGs",

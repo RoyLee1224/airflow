@@ -20,6 +20,7 @@ import { handlers as authHandlers } from "./auth";
 import { handlers as configHandlers } from "./config";
 import { handlers as dagHandlers } from "./dag";
 import { handlers as dagsHandlers } from "./dags";
+import { handlers as dashboardHandlers } from "./dashboard";
 import { handlers as healthHandlers } from "./health";
 import { handlers as logHandlers } from "./log";
 import { handlers as pluginsHandlers } from "./plugins";
@@ -31,6 +32,7 @@ export const handlers = [
   ...configHandlers,
   ...dagHandlers,
   ...dagsHandlers,
+  ...dashboardHandlers,
   ...healthHandlers,
   ...logHandlers,
   ...pluginsHandlers,

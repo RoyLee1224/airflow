@@ -29,8 +29,10 @@ export default defineConfig({
     // Replace the directory to work with the flask plugin generation
     {
       name: "transform-url-src",
-      transformIndexHtml: (html) =>
-        html.replace(`src="./assets/`, `src="./static/assets/`).replace(`href="/`, `href="./`),
+      transformIndexHtml: (html) => {
+        // Only transform assets paths, don't touch base href
+        return html.replace(`src="./assets/`, `src="./static/assets/`);
+      },
     },
     cssInjectedByJsPlugin(),
   ],

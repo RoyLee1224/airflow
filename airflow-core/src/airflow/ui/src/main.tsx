@@ -38,6 +38,15 @@ import i18n from "./i18n/config";
 import { client } from "./queryClient";
 import { system } from "./theme";
 
+// Enable MSW in development mode for API mocking
+if (import.meta.env.DEV) {
+  const { worker } = await import("./mocks/browser");
+
+  await worker.start({
+    onUnhandledRequest: "bypass",
+  });
+}
+
 // Set React, ReactDOM, and ReactJSXRuntime on globalThis to share them with the dynamically imported React plugins.
 // Only one instance of React should be used.
 // Reflect will avoid type checking.

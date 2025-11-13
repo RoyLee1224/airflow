@@ -19,7 +19,8 @@
 import { http, HttpResponse, type HttpHandler } from "msw";
 
 export const handlers: Array<HttpHandler> = [
-  http.get("/ui/health", () =>
+  // Health endpoint (v2 API)
+  http.get("/api/v2/health", () =>
     HttpResponse.json({
       metadatabase: { status: "healthy" },
       scheduler: {

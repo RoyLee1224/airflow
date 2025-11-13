@@ -19,8 +19,8 @@
 import { http, HttpResponse, type HttpHandler } from "msw";
 
 export const handlers: Array<HttpHandler> = [
-  // Version endpoint
-  http.get("/ui/version", () =>
+  // Version endpoint (v2 API)
+  http.get("/api/v2/version", () =>
     HttpResponse.json({
       git_version: "3.0.0.dev0+astro.1",
       version: "3.0.0.dev0",

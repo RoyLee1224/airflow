@@ -19,7 +19,8 @@
 import { http, HttpResponse, type HttpHandler } from "msw";
 
 export const handlers: Array<HttpHandler> = [
-  http.get("/ui/plugins", () =>
+  // Plugins endpoint (v2 API)
+  http.get("/api/v2/plugins", () =>
     HttpResponse.json({
       plugins: [],
       total_entries: 0,

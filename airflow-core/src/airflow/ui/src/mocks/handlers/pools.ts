@@ -19,7 +19,8 @@
 import { http, HttpResponse, type HttpHandler } from "msw";
 
 export const handlers: Array<HttpHandler> = [
-  http.get("/ui/pools", () =>
+  // Pools endpoint (v2 API)
+  http.get("/api/v2/pools", () =>
     HttpResponse.json({
       pools: [
         {

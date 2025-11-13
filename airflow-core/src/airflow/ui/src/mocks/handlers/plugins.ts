@@ -16,20 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { handlers as configHandlers } from "./config";
-import { handlers as dagHandlers } from "./dag";
-import { handlers as dagsHandlers } from "./dags";
-import { handlers as healthHandlers } from "./health";
-import { handlers as logHandlers } from "./log";
-import { handlers as pluginsHandlers } from "./plugins";
-import { handlers as poolsHandlers } from "./pools";
+import { http, HttpResponse, type HttpHandler } from "msw";
 
-export const handlers = [
-  ...configHandlers,
-  ...dagHandlers,
-  ...dagsHandlers,
-  ...healthHandlers,
-  ...logHandlers,
-  ...pluginsHandlers,
-  ...poolsHandlers,
+export const handlers: Array<HttpHandler> = [
+  http.get("/ui/plugins", () =>
+    HttpResponse.json({
+      plugins: [],
+      total_entries: 0,
+    }),
+  ),
 ];

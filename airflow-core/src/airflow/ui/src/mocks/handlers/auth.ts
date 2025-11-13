@@ -16,24 +16,24 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { handlers as authHandlers } from "./auth";
-import { handlers as configHandlers } from "./config";
-import { handlers as dagHandlers } from "./dag";
-import { handlers as dagsHandlers } from "./dags";
-import { handlers as healthHandlers } from "./health";
-import { handlers as logHandlers } from "./log";
-import { handlers as pluginsHandlers } from "./plugins";
-import { handlers as poolsHandlers } from "./pools";
-import { handlers as versionHandlers } from "./version";
+import { http, HttpResponse, type HttpHandler } from "msw";
 
-export const handlers = [
-  ...authHandlers,
-  ...configHandlers,
-  ...dagHandlers,
-  ...dagsHandlers,
-  ...healthHandlers,
-  ...logHandlers,
-  ...pluginsHandlers,
-  ...poolsHandlers,
-  ...versionHandlers,
+export const handlers: Array<HttpHandler> = [
+  // Auth menus endpoint
+  http.get("/ui/auth/menus", () =>
+    HttpResponse.json({
+      menu_items: [
+        {
+          name: "DAGs",
+          href: "/dags",
+          category: "browse",
+        },
+        {
+          name: "Datasets",
+          href: "/datasets",
+          category: "browse",
+        },
+      ],
+    }),
+  ),
 ];

@@ -16,24 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { handlers as authHandlers } from "./auth";
-import { handlers as configHandlers } from "./config";
-import { handlers as dagHandlers } from "./dag";
-import { handlers as dagsHandlers } from "./dags";
-import { handlers as healthHandlers } from "./health";
-import { handlers as logHandlers } from "./log";
-import { handlers as pluginsHandlers } from "./plugins";
-import { handlers as poolsHandlers } from "./pools";
-import { handlers as versionHandlers } from "./version";
+import { http, HttpResponse, type HttpHandler } from "msw";
 
-export const handlers = [
-  ...authHandlers,
-  ...configHandlers,
-  ...dagHandlers,
-  ...dagsHandlers,
-  ...healthHandlers,
-  ...logHandlers,
-  ...pluginsHandlers,
-  ...poolsHandlers,
-  ...versionHandlers,
+export const handlers: Array<HttpHandler> = [
+  // Version endpoint
+  http.get("/ui/version", () =>
+    HttpResponse.json({
+      git_version: "3.0.0.dev0+astro.1",
+      version: "3.0.0.dev0",
+    }),
+  ),
 ];

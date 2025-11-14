@@ -72,7 +72,6 @@ export const ResizableWrapper = ({
         borderRadius: "inherit",
         display: "flex",
         flexDirection: "column",
-        overflow: "hidden",
         position: "relative",
       }}
       width={size.width}

@@ -103,5 +103,9 @@ export const CalendarCell = ({
     return cellBox;
   }
 
-  return <HoverTooltip tooltip={renderTooltip(cellData, viewMode)}>{cellBox}</HoverTooltip>;
+  return (
+    <HoverTooltip delayMs={500} tooltip={renderTooltip(cellData, viewMode)}>
+      {cellBox}
+    </HoverTooltip>
+  );
 };

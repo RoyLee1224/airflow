@@ -19,11 +19,12 @@
 import { Box, Flex } from "@chakra-ui/react";
 import dayjs from "dayjs";
 import duration from "dayjs/plugin/duration";
+import type { RefObject } from "react";
 import { Link } from "react-router-dom";
 
+import { HoverTooltip } from "src/components/HoverTooltip";
 import type { TaskInstanceResponse } from "openapi/requests/types.gen";
-import TaskInstanceTooltip from "src/components/TaskInstanceTooltip";
-import { GRID_TOOLTIP_CONFIG } from "src/components/tooltip";
+import { TaskRecentRunsTooltipManual } from "src/components/tooltip/TaskRecentRunsTooltipManual";
 import { getTaskInstanceLink } from "src/utils/links";
 
 dayjs.extend(duration);
@@ -53,10 +54,12 @@ export const TaskRecentRuns = ({
   return (
     <Flex alignItems="flex-end" flexDirection="row-reverse">
       {taskInstancesWithDuration.map((taskInstance) => (
-        <TaskInstanceTooltip
-          {...GRID_TOOLTIP_CONFIG}
+        <HoverTooltip
+          delayMs={500}
           key={taskInstance.dag_run_id}
-          taskInstance={taskInstance}
+          tooltip={(triggerRef: RefObject<HTMLElement>) => (
+            <TaskRecentRunsTooltipManual taskInstance={taskInstance} triggerRef={triggerRef} />
+          )}
         >
           <Link to={getTaskInstanceLink(taskInstance)}>
             <Box p={1}>
@@ -69,7 +72,7 @@ export const TaskRecentRuns = ({
               />
             </Box>
           </Link>
-        </TaskInstanceTooltip>
+        </HoverTooltip>
       ))}
     </Flex>
   );

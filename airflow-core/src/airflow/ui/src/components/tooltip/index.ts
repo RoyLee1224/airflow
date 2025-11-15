@@ -34,6 +34,7 @@ export { TaskInstanceTooltipContent } from "./TaskInstanceTooltipContent";
 
 // Specialized tooltip implementations
 export { GridTaskInstanceTooltipManual } from "./GridTaskInstanceTooltipManual";
+export { TaskRecentRunsTooltipManual } from "./TaskRecentRunsTooltipManual";
 
 // Advanced hooks
 export { useGridTooltip } from "./useGridTooltip";

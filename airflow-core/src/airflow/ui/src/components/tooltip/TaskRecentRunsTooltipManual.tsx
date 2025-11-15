@@ -18,38 +18,24 @@
  */
 import type { ReactElement, RefObject } from "react";
 
-import { CALENDAR_MANUAL_TOOLTIP_CONFIG, ManualTooltip } from "src/components/tooltip";
+import type { TaskInstanceResponse } from "openapi/requests/types.gen";
 
-import { CalendarTooltipContent } from "./CalendarTooltipContent";
-import type { CalendarCellData, CalendarColorMode } from "./types";
+import { ManualTooltip } from "./ManualTooltip";
+import { GRID_MANUAL_TOOLTIP_CONFIG } from "./manualTooltipConfig";
+import { TaskInstanceTooltipContent } from "./TaskInstanceTooltipContent";
 
 type Props = {
-  readonly cellData: CalendarCellData | undefined;
+  readonly taskInstance: TaskInstanceResponse;
   readonly triggerRef: RefObject<HTMLElement>;
-  readonly viewMode?: CalendarColorMode;
 };
 
 /**
- * Calendar cell tooltip using manual positioning
- * Migrated from custom implementation to use ManualTooltip for better performance
+ * Manual positioned tooltip for TaskRecentRuns bar chart
+ * Uses ManualTooltip with grid-optimized configuration
+ * Provides better performance than Chakra tooltip for dense bar charts
  */
-export const CalendarTooltip = ({ cellData, triggerRef, viewMode = "total" }: Props): ReactElement | null => {
-  if (!cellData) {
-    return null;
-  }
-
-  return (
-    <ManualTooltip
-      config={{
-        ...CALENDAR_MANUAL_TOOLTIP_CONFIG,
-        containerStyle: {
-          minWidth: "200px",
-          whiteSpace: "nowrap",
-        },
-      }}
-      triggerRef={triggerRef}
-    >
-      <CalendarTooltipContent cellData={cellData} viewMode={viewMode} />
-    </ManualTooltip>
-  );
-};
+export const TaskRecentRunsTooltipManual = ({ taskInstance, triggerRef }: Props): ReactElement | null => (
+  <ManualTooltip config={GRID_MANUAL_TOOLTIP_CONFIG} triggerRef={triggerRef}>
+    <TaskInstanceTooltipContent showRunId taskInstance={taskInstance} />
+  </ManualTooltip>
+);

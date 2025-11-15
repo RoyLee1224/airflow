@@ -19,3 +19,4 @@
 export { TOOLTIP_DEFAULTS, GRID_TOOLTIP_CONFIG } from "./config";
 export { TooltipField } from "./TooltipField";
 export { TaskInstanceTooltipContent } from "./TaskInstanceTooltipContent";
+export { useGridTooltip } from "./useGridTooltip";

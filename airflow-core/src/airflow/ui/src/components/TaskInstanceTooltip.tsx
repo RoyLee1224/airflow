@@ -16,68 +16,50 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { Box, Text } from "@chakra-ui/react";
-import { useTranslation } from "react-i18next";
+import type { ReactNode } from "react";
 
 import type {
   LightGridTaskInstanceSummary,
   TaskInstanceHistoryResponse,
   TaskInstanceResponse,
 } from "openapi/requests/types.gen";
-import Time from "src/components/Time";
 import { Tooltip, type TooltipProps } from "src/components/ui";
-import { renderDuration } from "src/utils";
+import { TaskInstanceTooltipContent } from "src/components/tooltip/TaskInstanceTooltipContent";
+import { TOOLTIP_DEFAULTS } from "src/components/tooltip";
 
 type Props = {
+  readonly customFields?: ReactNode;
+  readonly showRunId?: boolean;
+  readonly showTaskId?: boolean;
   readonly taskInstance?: LightGridTaskInstanceSummary | TaskInstanceHistoryResponse | TaskInstanceResponse;
 } & Omit<TooltipProps, "content">;
 
-const TaskInstanceTooltip = ({ children, positioning, taskInstance, ...rest }: Props) => {
-  const { t: translate } = useTranslation("common");
-
+const TaskInstanceTooltip = ({
+  children,
+  customFields,
+  positioning,
+  showRunId = true,
+  showTaskId = false,
+  taskInstance,
+  ...rest
+}: Props) => {
   return taskInstance === undefined ? (
     children
   ) : (
     <Tooltip
       {...rest}
       content={
-        <Box>
-          <Text>
-            {translate("state")}: {taskInstance.state}
-          </Text>
-          {"dag_run_id" in taskInstance ? (
-            <Text>
-              {translate("runId")}: {taskInstance.dag_run_id}
-            </Text>
-          ) : undefined}
-          {"start_date" in taskInstance ? (
-            <>
-              {taskInstance.try_number > 1 && (
-                <Text>
-                  {translate("tryNumber")}: {taskInstance.try_number}
-                </Text>
-              )}
-              <Text>
-                {translate("startDate")}: <Time datetime={taskInstance.start_date} />
-              </Text>
-              <Text>
-                {translate("endDate")}: <Time datetime={taskInstance.end_date} />
-              </Text>
-              <Text>
-                {translate("duration")}: {renderDuration(taskInstance.duration)}
-              </Text>
-            </>
-          ) : undefined}
-        </Box>
+        <TaskInstanceTooltipContent
+          customFields={customFields}
+          showRunId={showRunId}
+          showTaskId={showTaskId}
+          taskInstance={taskInstance}
+        />
       }
       key={taskInstance.task_id}
-      portalled
+      portalled={TOOLTIP_DEFAULTS.portalled}
       positioning={{
-        offset: {
-          crossAxis: 5,
-          mainAxis: 5,
-        },
-        placement: "bottom-start",
+        ...TOOLTIP_DEFAULTS.positioning,
         ...positioning,
       }}
     >

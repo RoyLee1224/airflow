@@ -19,13 +19,11 @@
 import { Badge, Flex } from "@chakra-ui/react";
 import type { MouseEvent } from "react";
 import React, { useCallback } from "react";
-import { useTranslation } from "react-i18next";
 import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
 
 import type { LightGridTaskInstanceSummary } from "openapi/requests/types.gen";
 import { StateIcon } from "src/components/StateIcon";
-import Time from "src/components/Time";
-import { Tooltip } from "src/components/ui";
+import TaskInstanceTooltip from "src/components/TaskInstanceTooltip";
 import { type HoverContextType, useHover } from "src/context/hover";
 import { buildTaskInstanceUrl } from "src/utils/links";
 
@@ -64,7 +62,6 @@ type Props = {
 const Instance = ({ dagId, instance, isGroup, isMapped, onClick, runId, taskId }: Props) => {
   const { setHoveredTaskId } = useHover();
   const { groupId: selectedGroupId, taskId: selectedTaskId } = useParams();
-  const { t: translate } = useTranslation();
   const location = useLocation();
 
   const [searchParams] = useSearchParams();
@@ -115,27 +112,7 @@ const Instance = ({ dagId, instance, isGroup, isMapped, onClick, runId, taskId }
           search: redirectionSearch,
         }}
       >
-        <Tooltip
-          content={
-            <>
-              {translate("taskId")}: {taskId}
-              <br />
-              {translate("state")}: {instance.state}
-              {instance.min_start_date !== null && (
-                <>
-                  <br />
-                  {translate("startDate")}: <Time datetime={instance.min_start_date} />
-                </>
-              )}
-              {instance.max_end_date !== null && (
-                <>
-                  <br />
-                  {translate("endDate")}: <Time datetime={instance.max_end_date} />
-                </>
-              )}
-            </>
-          }
-        >
+        <TaskInstanceTooltip showRunId={false} showTaskId taskInstance={instance}>
           <Badge
             alignItems="center"
             borderRadius={4}
@@ -150,7 +127,7 @@ const Instance = ({ dagId, instance, isGroup, isMapped, onClick, runId, taskId }
           >
             <StateIcon size={10} state={instance.state} />
           </Badge>
-        </Tooltip>
+        </TaskInstanceTooltip>
       </Link>
     </Flex>
   );

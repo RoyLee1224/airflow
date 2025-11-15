@@ -16,30 +16,44 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import type { ReactElement, RefObject } from "react";
+import type { ReactElement, ReactNode } from "react";
 
-import { CALENDAR_MANUAL_TOOLTIP_CONFIG, ManualTooltip } from "src/components/tooltip";
+import { CALENDAR_MANUAL_TOOLTIP_CONFIG, CustomTooltip } from "src/components/tooltip";
 
 import { CalendarTooltipContent } from "./CalendarTooltipContent";
 import type { CalendarCellData, CalendarColorMode } from "./types";
 
 type Props = {
   readonly cellData: CalendarCellData | undefined;
-  readonly triggerRef: RefObject<HTMLElement>;
+  readonly children: ReactElement;
+  readonly delayMs?: number;
   readonly viewMode?: CalendarColorMode;
 };
 
 /**
- * Calendar cell tooltip using manual positioning
- * Migrated from custom implementation to use ManualTooltip for better performance
+ * Simplified calendar cell tooltip using CustomTooltip
+ *
+ * No more HoverTooltip wrapper, no manual ref passing - just clean, simple usage
+ *
+ * @example
+ * ```tsx
+ * <CalendarTooltip cellData={cellData} viewMode="total">
+ *   <Box width="14px" height="14px" />
+ * </CalendarTooltip>
+ * ```
  */
-export const CalendarTooltip = ({ cellData, triggerRef, viewMode = "total" }: Props): ReactElement | null => {
+export const CalendarTooltip = ({
+  cellData,
+  children,
+  delayMs = 500,
+  viewMode = "total",
+}: Props): ReactElement => {
   if (!cellData) {
-    return null;
+    return children;
   }
 
   return (
-    <ManualTooltip
+    <CustomTooltip
       config={{
         ...CALENDAR_MANUAL_TOOLTIP_CONFIG,
         containerStyle: {
@@ -47,9 +61,10 @@ export const CalendarTooltip = ({ cellData, triggerRef, viewMode = "total" }: Pr
           whiteSpace: "nowrap",
         },
       }}
-      triggerRef={triggerRef}
+      content={<CalendarTooltipContent cellData={cellData} viewMode={viewMode} />}
+      delayMs={delayMs}
     >
-      <CalendarTooltipContent cellData={cellData} viewMode={viewMode} />
-    </ManualTooltip>
+      {children}
+    </CustomTooltip>
   );
 };

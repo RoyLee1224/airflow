@@ -4,106 +4,172 @@ This directory contains reusable tooltip components and configurations for the A
 
 ## Overview
 
-We provide two tooltip approaches:
+We provide a clean, layered tooltip architecture:
 
-1. **Chakra UI Tooltips** - Automatic positioning with accessibility features
-2. **Manual Tooltips** - Custom positioning for better performance in dense layouts
+1. **Base Component** - `CustomTooltip` - Integrated hover + positioning
+2. **Content Components** - Pure data formatting (reusable across tooltips)
+3. **Specialized Wrappers** - Pre-configured for specific use cases
+
+## Quick Start
+
+### Recommended: Use Specialized Wrappers
+
+For common use cases, use pre-configured wrappers:
+
+```tsx
+import { GridTaskInstanceTooltip } from "src/components/tooltip";
+
+<GridTaskInstanceTooltip taskInstance={instance} showTaskId>
+  <Badge>Task</Badge>
+</GridTaskInstanceTooltip>
+```
+
+**Available Wrappers:**
+- `GridTaskInstanceTooltip` - For grid view task instances (14px cells)
+- `TaskRecentRunsTooltip` - For bar chart tooltips (4px bars)
+
+### Advanced: Use CustomTooltip Directly
+
+For custom tooltips, use `CustomTooltip`:
+
+```tsx
+import { CustomTooltip, GRID_MANUAL_TOOLTIP_CONFIG } from "src/components/tooltip";
+
+<CustomTooltip
+  delayMs={500}
+  config={GRID_MANUAL_TOOLTIP_CONFIG}
+  content={<div>Your tooltip content</div>}
+>
+  <button>Hover me</button>
+</CustomTooltip>
+```
 
 ## Components
 
-### 1. ManualTooltip (Recommended for Dense Layouts)
+### 1. CustomTooltip (Base Component)
 
-A high-performance tooltip with manual positioning, ideal for grids and calendars.
+All-in-one tooltip with integrated hover management and manual positioning.
 
-**Basic Usage:**
+**Features:**
+- ✅ No wrapper components needed
+- ✅ Automatic ref management
+- ✅ Configurable delay and positioning
+- ✅ High performance for dense layouts
 
+**Props:**
 ```tsx
-import { HoverTooltip } from "src/components/HoverTooltip";
-import { ManualTooltip, GRID_MANUAL_TOOLTIP_CONFIG } from "src/components/tooltip";
-
-<HoverTooltip
-  delayMs={500}
-  tooltip={(triggerRef) => (
-    <ManualTooltip config={GRID_MANUAL_TOOLTIP_CONFIG} triggerRef={triggerRef}>
-      <div>Your tooltip content here</div>
-    </ManualTooltip>
-  )}
->
-  <button>Hover me</button>
-</HoverTooltip>
-```
-
-**Custom Configuration:**
-
-```tsx
-import { ManualTooltip } from "src/components/tooltip";
-
-const customConfig = {
-  placement: "bottom",
-  offset: 12,
-  showArrow: true,
-  zIndex: 2000,
-  containerStyle: { maxWidth: "300px" },
+type Props = {
+  children: ReactElement;           // Trigger element
+  content: ReactNode;                // Tooltip content
+  config?: ManualTooltipConfig;      // Positioning & styling
+  delayMs?: number;                  // Hover delay (default: 500ms)
 };
-
-<ManualTooltip config={customConfig} triggerRef={triggerRef}>
-  <div>Content</div>
-</ManualTooltip>
 ```
 
-### 2. TaskInstanceTooltip (Chakra-based)
+**Example:**
+```tsx
+<CustomTooltip
+  delayMs={500}
+  config={{
+    placement: "top",
+    offset: 8,
+    showArrow: true,
+    containerStyle: { minWidth: "200px" },
+  }}
+  content={<TaskInstanceTooltipContent taskInstance={instance} />}
+>
+  <Badge>Task</Badge>
+</CustomTooltip>
+```
 
-For standard task instance tooltips with automatic positioning.
+### 2. Specialized Wrappers
+
+Pre-configured tooltips for common patterns.
+
+#### GridTaskInstanceTooltip
+
+For grid view task instances (14px cells).
 
 ```tsx
-import TaskInstanceTooltip from "src/components/TaskInstanceTooltip";
-import { GRID_TOOLTIP_CONFIG } from "src/components/tooltip";
+import { GridTaskInstanceTooltip } from "src/components/tooltip";
 
-<TaskInstanceTooltip
-  {...GRID_TOOLTIP_CONFIG}
+<GridTaskInstanceTooltip
+  taskInstance={instance}
+  showTaskId              // Show task ID in tooltip
+  showRunId={false}       // Hide run ID
+  customFields={<div>Custom content</div>}  // Optional extra fields
+>
+  <Badge>Task</Badge>
+</GridTaskInstanceTooltip>
+```
+
+#### TaskRecentRunsTooltip
+
+For bar chart tooltips (4px bars).
+
+```tsx
+import { TaskRecentRunsTooltip } from "src/components/tooltip";
+
+<TaskRecentRunsTooltip taskInstance={instance}>
+  <Box width="4px" height="14px" />
+</TaskRecentRunsTooltip>
+```
+
+### 3. Content Components
+
+Pure components for formatting tooltip content (no positioning logic).
+
+#### TaskInstanceTooltipContent
+
+```tsx
+import { TaskInstanceTooltipContent } from "src/components/tooltip";
+
+<TaskInstanceTooltipContent
   taskInstance={instance}
   showTaskId
   showRunId={false}
->
-  <Badge>Task</Badge>
-</TaskInstanceTooltip>
+  customFields={<TooltipField label="Duration" value="10s" />}
+/>
 ```
 
-### 3. GridTaskInstanceTooltipManual
+#### TooltipField
 
-Pre-configured manual tooltip for grid task instances.
+Simple label-value field for tooltips.
 
 ```tsx
-import { HoverTooltip } from "src/components/HoverTooltip";
-import { GridTaskInstanceTooltipManual } from "src/components/tooltip";
+import { TooltipField } from "src/components/tooltip";
 
-<HoverTooltip
-  delayMs={500}
-  tooltip={(triggerRef) => (
-    <GridTaskInstanceTooltipManual
-      instance={taskInstance}
-      triggerRef={triggerRef}
-      showTaskId
-      showRunId={false}
-    />
-  )}
->
-  <Badge>Task</Badge>
-</HoverTooltip>
+<TooltipField label="State" value="success" />
 ```
 
 ## Configurations
 
-### Chakra Tooltip Configs
+### Pre-configured Settings
 
-- `TOOLTIP_DEFAULTS` - Base configuration (300ms delay)
-- `GRID_TOOLTIP_CONFIG` - Optimized for dense grids (500ms delay, immediate close)
-
-### Manual Tooltip Configs
-
-- `MANUAL_TOOLTIP_DEFAULTS` - Base manual config (top placement, 8px offset)
+- `MANUAL_TOOLTIP_DEFAULTS` - Base defaults (top, 8px offset, arrow)
 - `GRID_MANUAL_TOOLTIP_CONFIG` - Grid-optimized (top placement)
 - `CALENDAR_MANUAL_TOOLTIP_CONFIG` - Calendar-optimized (bottom placement)
+
+### Custom Configuration
+
+```tsx
+import type { ManualTooltipConfig } from "src/components/tooltip";
+
+const customConfig: ManualTooltipConfig = {
+  placement: "bottom-start",
+  offset: 12,
+  showArrow: false,
+  zIndex: 2000,
+  containerStyle: {
+    maxWidth: "400px",
+    whiteSpace: "normal",
+    backgroundColor: "blue.500",
+  },
+  arrowStyle: {
+    borderTopColor: "blue.500",
+  },
+};
+```
 
 ## Placement Options
 
@@ -119,85 +185,114 @@ Supported placements:
 
 ## When to Use What
 
-| Scenario | Recommended Approach | Config |
-|----------|---------------------|--------|
-| Dense Grid (14px cells) | ManualTooltip | GRID_MANUAL_TOOLTIP_CONFIG |
-| Calendar Cells | ManualTooltip | CALENDAR_MANUAL_TOOLTIP_CONFIG |
-| Bar Charts (small bars) | TaskInstanceTooltip | GRID_TOOLTIP_CONFIG |
-| Large Cards/Nodes | TaskInstanceTooltip | TOOLTIP_DEFAULTS |
-| Custom Content | ManualTooltip | Custom config |
+| Scenario | Recommended Component | Why |
+|----------|----------------------|-----|
+| Grid task instances | `GridTaskInstanceTooltip` | Pre-configured, simplest API |
+| Bar charts | `TaskRecentRunsTooltip` | Optimized for 4px bars |
+| Calendar cells | `CalendarTooltip` | Custom calendar content |
+| Custom content | `CustomTooltip` | Full control with minimal code |
+| One-off tooltip | `CustomTooltip` | Just pass content directly |
 
 ## Performance Considerations
 
-**Use ManualTooltip when:**
+**CustomTooltip is ideal when:**
 - ✅ Elements are very small (<20px)
 - ✅ Elements are densely packed
 - ✅ User may quickly move mouse across many elements
 - ✅ You need exact positioning control
+- ✅ Performance is critical
 
-**Use TaskInstanceTooltip when:**
-- ✅ Elements are larger (>50px)
-- ✅ Elements have good spacing
-- ✅ You need accessibility features out of box
-- ✅ Automatic boundary detection is desired
-
-## Creating Custom Tooltips
-
-```tsx
-import { ManualTooltip } from "src/components/tooltip";
-import type { ManualTooltipConfig } from "src/components/tooltip";
-
-const MyCustomTooltip = ({ data, triggerRef }) => {
-  const config: ManualTooltipConfig = {
-    placement: "right",
-    offset: 10,
-    showArrow: false,
-    containerStyle: {
-      maxWidth: "400px",
-      whiteSpace: "normal",
-    },
-  };
-
-  return (
-    <ManualTooltip config={config} triggerRef={triggerRef}>
-      <div>
-        <h3>{data.title}</h3>
-        <p>{data.description}</p>
-      </div>
-    </ManualTooltip>
-  );
-};
-```
+**Benefits over Chakra tooltips:**
+- Manual positioning prevents layout recalculation
+- Optimized for rapid hover events
+- Configurable delays prevent tooltip stacking
+- Portal rendering keeps DOM clean
 
 ## Migration Guide
 
-### From CalendarTooltip to ManualTooltip
+### From HoverTooltip + Manual Pattern
 
 **Before:**
 ```tsx
-// Custom positioning logic in CalendarTooltip
-<CalendarTooltip cellData={data} triggerRef={ref} />
+import { HoverTooltip } from "src/components/HoverTooltip";
+import { GridTaskInstanceTooltipManual } from "src/components/tooltip";
+
+<HoverTooltip
+  delayMs={500}
+  tooltip={(triggerRef) => (
+    <GridTaskInstanceTooltipManual
+      instance={instance}
+      triggerRef={triggerRef}
+      showTaskId
+    />
+  )}
+>
+  <Badge>Task</Badge>
+</HoverTooltip>
 ```
 
 **After:**
 ```tsx
-<ManualTooltip config={CALENDAR_MANUAL_TOOLTIP_CONFIG} triggerRef={ref}>
-  <CalendarTooltipContent cellData={data} />
-</ManualTooltip>
-```
+import { GridTaskInstanceTooltip } from "src/components/tooltip";
 
-### From Inline Tooltip to TaskInstanceTooltip
-
-**Before:**
-```tsx
-<Tooltip content={<>Task: {id}<br/>State: {state}</>}>
+<GridTaskInstanceTooltip taskInstance={instance} showTaskId>
   <Badge>Task</Badge>
-</Tooltip>
+</GridTaskInstanceTooltip>
 ```
 
-**After:**
+**Result:** 70% less code, no wrapper, no ref passing
+
+### Creating New Specialized Wrappers
+
+Pattern to follow:
+
 ```tsx
-<TaskInstanceTooltip taskInstance={instance} showTaskId>
-  <Badge>Task</Badge>
-</TaskInstanceTooltip>
+import type { ReactElement } from "react";
+import { CustomTooltip } from "./CustomTooltip";
+import { GRID_MANUAL_TOOLTIP_CONFIG } from "./manualTooltipConfig";
+import { YourContent } from "./YourContent";
+
+type Props = {
+  readonly children: ReactElement;
+  readonly data: YourDataType;
+  readonly delayMs?: number;
+};
+
+export const YourTooltip = ({
+  children,
+  data,
+  delayMs = 500,
+}: Props): ReactElement => (
+  <CustomTooltip
+    config={GRID_MANUAL_TOOLTIP_CONFIG}
+    content={<YourContent data={data} />}
+    delayMs={delayMs}
+  >
+    {children}
+  </CustomTooltip>
+);
 ```
+
+## Architecture
+
+```
+Application Code
+       ↓
+Specialized Wrappers (GridTaskInstanceTooltip, etc.)
+       ↓
+CustomTooltip (hover + positioning)
+       ↓
+Content Components (pure formatting)
+```
+
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed design documentation.
+
+## Legacy Components
+
+For backward compatibility, these legacy components are still available but not recommended for new code:
+
+- `ManualTooltip` - Requires HoverTooltip wrapper
+- `GridTaskInstanceTooltipManual` - Requires HoverTooltip wrapper
+- `TaskRecentRunsTooltipManual` - Requires HoverTooltip wrapper
+
+**Recommendation:** Use `CustomTooltip` or specialized wrappers for all new code.

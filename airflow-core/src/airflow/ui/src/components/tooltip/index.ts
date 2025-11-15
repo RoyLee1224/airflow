@@ -30,7 +30,7 @@ export { TOOLTIP_DEFAULTS, GRID_TOOLTIP_CONFIG } from "./config";
 export { ManualTooltip } from "./ManualTooltip";
 
 // ✨ Recommended: Integrated hover management + positioning (no wrapper needed!)
-export { ManualTooltipV2 } from "./ManualTooltipV2";
+export { CustomTooltip } from "./CustomTooltip";
 
 // Configuration presets
 export {
@@ -56,6 +56,7 @@ export { TaskRecentRunsTooltipManual } from "./TaskRecentRunsTooltipManual";
 
 // ✨ V2 wrappers (all-in-one, recommended for new code)
 export { GridTaskInstanceTooltip } from "./GridTaskInstanceTooltip";
+export { TaskRecentRunsTooltip } from "./TaskRecentRunsTooltip";
 
 // ========================================
 // Advanced Hooks

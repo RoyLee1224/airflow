@@ -14,15 +14,15 @@
 
 ### Layer 1: Base Components (Choose One)
 
-#### Option A: ManualTooltipV2 (Recommended for New Code)
+#### Option A: CustomTooltip (Recommended for New Code)
 ```tsx
-<ManualTooltipV2
+<CustomTooltip
   delayMs={500}
   config={GRID_MANUAL_TOOLTIP_CONFIG}
   content={<YourContent />}
 >
   <TriggerElement />
-</ManualTooltipV2>
+</CustomTooltip>
 ```
 
 **Advantages:**
@@ -131,7 +131,7 @@ Pre-configured tooltips for specific use cases:
 
 ### Step 2: Choose Replacement
 
-#### For Pattern A → ManualTooltipV2
+#### For Pattern A → CustomTooltip
 ```tsx
 // Before
 <HoverTooltip delayMs={500} tooltip={(ref) => <Manual triggerRef={ref} />}>
@@ -139,9 +139,9 @@ Pre-configured tooltips for specific use cases:
 </HoverTooltip>
 
 // After
-<ManualTooltipV2 delayMs={500} config={CONFIG} content={<Content />}>
+<CustomTooltip delayMs={500} config={CONFIG} content={<Content />}>
   <Trigger />
-</ManualTooltipV2>
+</CustomTooltip>
 ```
 
 #### For Pattern B → Specialized Wrapper
@@ -176,7 +176,7 @@ import { GridTaskInstanceTooltip } from "src/components/tooltip";
 tooltip/
 ├── Core Components
 │   ├── ManualTooltip.tsx          # Legacy: requires HoverTooltip wrapper
-│   ├── ManualTooltipV2.tsx        # New: integrated hover management
+│   ├── CustomTooltip.tsx          # New: integrated hover management
 │   └── manualTooltipConfig.ts     # Shared configs & types
 │
 ├── Content Components (Pure)
@@ -200,20 +200,20 @@ tooltip/
 
 ### Pattern 1: Direct Usage (Simplest)
 ```tsx
-<ManualTooltipV2
+<CustomTooltip
   delayMs={500}
   config={GRID_MANUAL_TOOLTIP_CONFIG}
   content={<div>Simple tooltip</div>}
 >
   <button>Hover me</button>
-</ManualTooltipV2>
+</CustomTooltip>
 ```
 
 **When to use:** Simple, one-off tooltips
 
 ### Pattern 2: With Content Component (Reusable)
 ```tsx
-<ManualTooltipV2
+<CustomTooltip
   delayMs={500}
   config={GRID_MANUAL_TOOLTIP_CONFIG}
   content={
@@ -224,7 +224,7 @@ tooltip/
   }
 >
   <Badge>Task</Badge>
-</ManualTooltipV2>
+</CustomTooltip>
 ```
 
 **When to use:** Consistent formatting across multiple locations
@@ -242,8 +242,8 @@ tooltip/
 
 ## 📊 Comparison
 
-| Aspect | HoverTooltip + ManualTooltip | ManualTooltipV2 | Specialized Wrapper |
-|--------|------------------------------|-----------------|---------------------|
+| Aspect | HoverTooltip + ManualTooltip | CustomTooltip | Specialized Wrapper |
+|--------|------------------------------|---------------|---------------------|
 | Lines of code | 7-10 | 3-5 | 1-3 |
 | Ref management | Manual | Automatic | Automatic |
 | Type safety | Partial | Full | Full |
@@ -256,13 +256,13 @@ tooltip/
 ## 🚀 Recommendations
 
 ### For New Code
-1. **Simple tooltips** → Use `ManualTooltipV2` directly
+1. **Simple tooltips** → Use `CustomTooltip` directly
 2. **Task instances** → Use `GridTaskInstanceTooltip` / `TaskRecentRunsTooltip`
-3. **Custom content** → Create content component + use `ManualTooltipV2`
+3. **Custom content** → Create content component + use `CustomTooltip`
 
 ### For Existing Code
 1. **Low priority** → Keep as is (works fine)
-2. **Medium priority** → Replace HoverTooltip pattern with ManualTooltipV2
+2. **Medium priority** → Replace HoverTooltip pattern with CustomTooltip
 3. **High priority** → Create specialized wrapper if used in 3+ places
 
 ### For Large Elements (>50px)
@@ -275,10 +275,10 @@ tooltip/
 ## 🔮 Future Considerations
 
 ### Phase 1: Gradual Migration (Current)
-- ✅ ManualTooltipV2 created
+- ✅ CustomTooltip created
 - ✅ Specialized wrappers created
-- ⏳ Migrate high-traffic areas
-- ⏳ Update documentation
+- ✅ Migrated high-traffic areas (Grid, TaskRecentRuns, Calendar)
+- ✅ Updated documentation
 
 ### Phase 2: Deprecation (Future)
 - Mark `HoverTooltip` as deprecated
@@ -287,7 +287,7 @@ tooltip/
 
 ### Phase 3: Cleanup (Future)
 - Remove `HoverTooltip` component
-- Remove legacy `ManualTooltip` (keep V2)
+- Remove legacy `ManualTooltip` (keep CustomTooltip)
 - Consolidate all manual tooltips
 
 ---

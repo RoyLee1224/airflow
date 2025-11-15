@@ -17,9 +17,6 @@
  * under the License.
  */
 import { Box } from "@chakra-ui/react";
-import type React from "react";
-
-import { HoverTooltip } from "src/components/HoverTooltip";
 
 import { CalendarTooltip } from "./CalendarTooltip";
 import type { CalendarCellData, CalendarColorMode } from "./types";
@@ -37,12 +34,6 @@ type Props = {
   readonly marginRight?: string;
   readonly viewMode?: CalendarColorMode;
 };
-
-const renderTooltip =
-  (cellData: CalendarCellData | undefined, viewMode: CalendarColorMode) =>
-  (triggerRef: React.RefObject<HTMLElement>) => (
-    <CalendarTooltip cellData={cellData} triggerRef={triggerRef} viewMode={viewMode} />
-  );
 
 export const CalendarCell = ({
   backgroundColor,
@@ -104,8 +95,8 @@ export const CalendarCell = ({
   }
 
   return (
-    <HoverTooltip delayMs={500} tooltip={renderTooltip(cellData, viewMode)}>
+    <CalendarTooltip cellData={cellData} viewMode={viewMode}>
       {cellBox}
-    </HoverTooltip>
+    </CalendarTooltip>
   );
 };

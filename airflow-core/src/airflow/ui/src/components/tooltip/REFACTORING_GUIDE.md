@@ -67,14 +67,14 @@ return <div style={tooltipStyle}>{/* content */}</div>;
 
 ### 階段 3: 完全集成（建議架構）
 ```tsx
-// ✨ ManualTooltipV2 - All-in-one solution
-<ManualTooltipV2
+// ✨ CustomTooltip - All-in-one solution
+<CustomTooltip
   delayMs={500}
   config={GRID_MANUAL_TOOLTIP_CONFIG}
   content={<TaskInstanceTooltipContent taskInstance={instance} />}
 >
   <Badge />
-</ManualTooltipV2>
+</CustomTooltip>
 
 // ✨ Or use specialized wrapper
 <GridTaskInstanceTooltip taskInstance={instance} showTaskId>
@@ -165,16 +165,16 @@ return (
   </CalendarTooltip>
 );
 
-// CalendarTooltip.tsx - using ManualTooltipV2
+// CalendarTooltip.tsx - using CustomTooltip
 export const CalendarTooltip = ({ cellData, viewMode, children }) =>
   cellData ? (
-    <ManualTooltipV2
+    <CustomTooltip
       delayMs={500}
       config={{ ...CALENDAR_MANUAL_TOOLTIP_CONFIG, containerStyle: { minWidth: "200px" } }}
       content={<CalendarTooltipContent cellData={cellData} viewMode={viewMode} />}
     >
       {children}
-    </ManualTooltipV2>
+    </CustomTooltip>
   ) : (
     children
   );
@@ -288,7 +288,7 @@ import { TaskRecentRunsTooltip } from "src/components/tooltip";
 <TaskInstanceTooltipContent taskInstance={instance} />
 ```
 
-### 2. ✅ 定位邏輯 → ManualTooltip/ManualTooltipV2
+### 2. ✅ 定位邏輯 → ManualTooltip/CustomTooltip
 ```tsx
 // Before: Repeated positioning calculations
 const tooltipStyle = useMemo(() => {
@@ -300,11 +300,11 @@ const tooltipStyle = useMemo(() => {
   };
 }, [triggerRef]);
 
-// After: Built into ManualTooltipV2
-<ManualTooltipV2 config={{ placement: "top" }}>
+// After: Built into CustomTooltip
+<CustomTooltip config={{ placement: "top" }}>
 ```
 
-### 3. ✅ Hover 狀態管理 → ManualTooltipV2
+### 3. ✅ Hover 狀態管理 → CustomTooltip
 ```tsx
 // Before: Manual state + timeout management
 const [isOpen, setIsOpen] = useState(false);
@@ -312,8 +312,8 @@ const timeoutRef = useRef();
 const handleMouseEnter = () => { /* ... */ };
 const handleMouseLeave = () => { /* ... */ };
 
-// After: Built into ManualTooltipV2
-<ManualTooltipV2 delayMs={500}>
+// After: Built into CustomTooltip
+<CustomTooltip delayMs={500}>
 ```
 
 ### 4. ✅ 配置預設 → manualTooltipConfig.ts
@@ -330,7 +330,7 @@ const handleMouseLeave = () => { /* ... */ };
 import { GRID_MANUAL_TOOLTIP_CONFIG } from "...";
 ```
 
-### 5. ✅ Ref 管理 → ManualTooltipV2 (自動)
+### 5. ✅ Ref 管理 → CustomTooltip (自動)
 ```tsx
 // Before: Manual ref creation and passing
 const triggerRef = useRef(null);
@@ -338,9 +338,9 @@ const triggerRef = useRef(null);
 <Tooltip triggerRef={triggerRef} />
 
 // After: Automatic
-<ManualTooltipV2>
+<CustomTooltip>
   <div />  {/* ref automatically attached */}
-</ManualTooltipV2>
+</CustomTooltip>
 ```
 
 ---
@@ -348,19 +348,20 @@ const triggerRef = useRef(null);
 ## 🚀 實施計畫
 
 ### 立即可做 (不破壞現有代碼)
-1. ✅ 添加 ManualTooltipV2.tsx
+1. ✅ 添加 CustomTooltip.tsx
 2. ✅ 添加 GridTaskInstanceTooltip.tsx
 3. ✅ 添加 TaskRecentRunsTooltip.tsx
-4. ⏳ 更新文檔說明新舊兩種方式
+4. ✅ 更新文檔說明新舊兩種方式
+5. ✅ 遷移 Grid、TaskRecentRuns、Calendar 到新架構
 
 ### 漸進式遷移 (可選)
-1. 新功能使用 ManualTooltipV2
+1. 新功能使用 CustomTooltip
 2. 修改現有代碼時順便升級
 3. 保留舊代碼向後兼容
 
 ### 未來清理 (當所有代碼遷移後)
 1. 標記 HoverTooltip 為 @deprecated
-2. 移除舊的 ManualTooltip (keep V2)
+2. 移除舊的 ManualTooltip (keep CustomTooltip)
 3. 統一所有 tooltip 為新架構
 
 ---
@@ -384,7 +385,7 @@ const triggerRef = useRef(null);
 ### HoverTooltip 還需要嗎？
 **答案: 不需要了** ✅
 
-- ManualTooltipV2 整合了所有功能
+- CustomTooltip 整合了所有功能
 - 更簡潔、更直觀
 - 向後兼容(保留 HoverTooltip 供舊代碼使用)
 
@@ -394,13 +395,14 @@ const triggerRef = useRef(null);
    ↓
 包裝層: 預配置的組合
    ↓
-基礎層: ManualTooltipV2 (整合 hover + 定位)
+基礎層: CustomTooltip (整合 hover + 定位)
    ↓
 內容層: 純格式化組件
 ```
 
-### 下一步
-1. 審查 ManualTooltipV2 實現
-2. 創建剩餘的專用包裝組件
-3. 更新 README 展示兩種方式
-4. 逐步遷移現有代碼
+### 完成進度
+1. ✅ CustomTooltip 實現完成
+2. ✅ 創建專用包裝組件 (GridTaskInstanceTooltip, TaskRecentRunsTooltip)
+3. ✅ 更新 README 展示新架構
+4. ✅ 已遷移 Grid、TaskRecentRuns、Calendar 到新架構
+5. ✅ 更新所有文檔 (README, ARCHITECTURE, REFACTORING_GUIDE)

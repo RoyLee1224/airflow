@@ -16,9 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import type { ReactElement, ReactNode } from "react";
+import type { ReactElement } from "react";
 
-import type { LightGridTaskInstanceSummary } from "openapi/requests/types.gen";
+import type { TaskInstanceResponse } from "openapi/requests/types.gen";
 
 import { CustomTooltip } from "./CustomTooltip";
 import { GRID_MANUAL_TOOLTIP_CONFIG } from "./manualTooltipConfig";
@@ -26,43 +26,31 @@ import { TaskInstanceTooltipContent } from "./TaskInstanceTooltipContent";
 
 type Props = {
   readonly children: ReactElement;
-  readonly customFields?: ReactNode;
   readonly delayMs?: number;
-  readonly showRunId?: boolean;
-  readonly showTaskId?: boolean;
-  readonly taskInstance: LightGridTaskInstanceSummary;
+  readonly taskInstance: TaskInstanceResponse;
 };
 
 /**
- * Simplified Grid task instance tooltip using CustomTooltip
+ * Simplified tooltip for TaskRecentRuns bar chart
  *
- * No more HoverTooltip wrapper, no manual ref passing - just clean, simple usage
+ * Uses CustomTooltip with grid-optimized configuration for better performance
+ * on dense bar charts (4px width elements)
  *
  * @example
  * ```tsx
- * <GridTaskInstanceTooltip taskInstance={instance} showTaskId>
- *   <Badge>Task</Badge>
- * </GridTaskInstanceTooltip>
+ * <TaskRecentRunsTooltip taskInstance={instance}>
+ *   <Box width="4px" height="14px" />
+ * </TaskRecentRunsTooltip>
  * ```
  */
-export const GridTaskInstanceTooltip = ({
+export const TaskRecentRunsTooltip = ({
   children,
-  customFields,
   delayMs = 500,
-  showRunId = false,
-  showTaskId = true,
   taskInstance,
 }: Props): ReactElement => (
   <CustomTooltip
     config={GRID_MANUAL_TOOLTIP_CONFIG}
-    content={
-      <TaskInstanceTooltipContent
-        customFields={customFields}
-        showRunId={showRunId}
-        showTaskId={showTaskId}
-        taskInstance={taskInstance}
-      />
-    }
+    content={<TaskInstanceTooltipContent showRunId taskInstance={taskInstance} />}
     delayMs={delayMs}
   >
     {children}

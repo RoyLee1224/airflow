@@ -50,8 +50,3 @@ export { TaskInstanceTooltipContent } from "./TaskInstanceTooltipContent";
 // ✨ Pre-configured wrappers (all-in-one, recommended)
 export { GridTaskInstanceTooltip } from "./GridTaskInstanceTooltip";
 export { TaskRecentRunsTooltip } from "./TaskRecentRunsTooltip";
-
-// ========================================
-// Advanced Hooks
-// ========================================
-export { useGridTooltip } from "./useGridTooltip";

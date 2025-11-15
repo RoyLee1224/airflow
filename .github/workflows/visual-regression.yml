@@ -1,0 +1,210 @@
+name: Visual Regression Tests
+
+on:
+  pull_request:
+    paths:
+      - 'airflow-core/src/airflow/ui/**'
+      - '.github/workflows/visual-regression.yml'
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  visual-regression:
+    name: Visual Regression Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        working-directory: airflow-core/src/airflow/ui
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        working-directory: airflow-core/src/airflow/ui
+        run: npx playwright install chromium --with-deps
+
+      # 執行視覺回歸測試 (當前 PR 分支)
+      - name: Run visual regression tests (PR)
+        working-directory: airflow-core/src/airflow/ui
+        run: |
+          pnpm vitest run --config vitest.browser.config.ts
+        continue-on-error: true
+
+      # 儲存 PR 分支的截圖
+      - name: Upload PR screenshots
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pr-screenshots
+          path: |
+            airflow-core/src/airflow/ui/**/__image_snapshots__/
+          retention-days: 7
+
+      # 切換到 base 分支
+      - name: Checkout base branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+          fetch-depth: 1
+          path: base-branch
+
+      # 執行視覺回歸測試 (base 分支)
+      - name: Run visual regression tests (Base)
+        working-directory: base-branch/airflow-core/src/airflow/ui
+        run: |
+          pnpm install --frozen-lockfile
+          npx playwright install chromium --with-deps
+          pnpm vitest run --config vitest.browser.config.ts
+        continue-on-error: true
+
+      # 儲存 base 分支的截圖
+      - name: Upload base screenshots
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: base-screenshots
+          path: |
+            base-branch/airflow-core/src/airflow/ui/**/__image_snapshots__/
+          retention-days: 7
+
+      # 對比截圖
+      - name: Compare screenshots
+        id: compare
+        run: |
+          node .github/scripts/compare-screenshots.js
+        continue-on-error: true
+
+      # 生成視覺測試報告
+      - name: Generate visual test report
+        if: always()
+        run: |
+          node .github/scripts/generate-visual-report.js
+
+      # 上傳視覺測試報告
+      - name: Upload visual test report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: visual-test-report
+          path: visual-report/
+          retention-days: 30
+
+      # 部署報告到 GitHub Pages (可選)
+      - name: Deploy report to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        if: always()
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./visual-report
+          destination_dir: pr-${{ github.event.pull_request.number }}
+
+      # 在 PR 中添加評論
+      - name: Comment PR with visual changes
+        uses: actions/github-script@v7
+        if: always()
+        with:
+          script: |
+            const fs = require('fs');
+            const report = JSON.parse(fs.readFileSync('visual-report/report.json', 'utf8'));
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('<!-- visual-regression-report -->')
+            );
+
+            const commentBody = `<!-- visual-regression-report -->
+            ## 🎨 Visual Regression Test Results
+
+            ${report.summary}
+
+            ### 📊 Summary
+            - **Total tests**: ${report.total}
+            - **✅ Passed**: ${report.passed}
+            - **❌ Failed**: ${report.failed}
+            - **🔄 Changed**: ${report.changed}
+
+            ${report.changes.length > 0 ? `
+            ### 🔍 Visual Changes Detected
+
+            ${report.changes.map((change, index) => `
+            <details>
+            <summary><strong>${change.name}</strong> - ${change.diff}% difference</summary>
+
+            | Before (Base) | After (PR) | Diff |
+            |---------------|------------|------|
+            | ![Before](${change.baseUrl}) | ![After](${change.prUrl}) | ![Diff](${change.diffUrl}) |
+
+            </details>
+            `).join('\n')}
+            ` : '✨ No visual changes detected!'}
+
+            📄 [View Full Report](https://your-username.github.io/airflow/pr-${context.issue.number})
+
+            ---
+            <sub>Generated by Visual Regression Tests • [Workflow](${context.payload.repository.html_url}/actions/runs/${context.runId})</sub>
+            `;
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: commentBody
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: commentBody
+              });
+            }
+
+      # 如果有視覺變更，標記 PR
+      - name: Add label if visual changes detected
+        uses: actions/github-script@v7
+        if: steps.compare.outputs.has_changes == 'true'
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['ui-changes', 'needs-visual-review']
+            });

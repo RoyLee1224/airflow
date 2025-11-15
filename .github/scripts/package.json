@@ -1,0 +1,17 @@
+{
+  "name": "airflow-ci-scripts",
+  "version": "1.0.0",
+  "description": "CI/CD scripts for Airflow visual regression testing",
+  "private": true,
+  "scripts": {
+    "compare": "node compare-screenshots.js",
+    "report": "node generate-visual-report.js"
+  },
+  "dependencies": {
+    "pixelmatch": "^6.0.0",
+    "pngjs": "^7.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -16,11 +16,23 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-// Chakra-based tooltip configuration
+
+// ========================================
+// Chakra-based Tooltips
+// ========================================
 export { TOOLTIP_DEFAULTS, GRID_TOOLTIP_CONFIG } from "./config";
 
-// Manual tooltip components and configuration
+// ========================================
+// Manual Tooltip - Base Components
+// ========================================
+
+// Legacy: Requires HoverTooltip wrapper (kept for backward compatibility)
 export { ManualTooltip } from "./ManualTooltip";
+
+// ✨ Recommended: Integrated hover management + positioning (no wrapper needed!)
+export { ManualTooltipV2 } from "./ManualTooltipV2";
+
+// Configuration presets
 export {
   MANUAL_TOOLTIP_DEFAULTS,
   GRID_MANUAL_TOOLTIP_CONFIG,
@@ -28,13 +40,24 @@ export {
 } from "./manualTooltipConfig";
 export type { ManualTooltipConfig, TooltipPlacement } from "./manualTooltipConfig";
 
-// Reusable tooltip content components
+// ========================================
+// Content Components (Pure/Reusable)
+// ========================================
 export { TooltipField } from "./TooltipField";
 export { TaskInstanceTooltipContent } from "./TaskInstanceTooltipContent";
 
-// Specialized tooltip implementations
+// ========================================
+// Specialized Wrappers
+// ========================================
+
+// Legacy wrappers (require HoverTooltip)
 export { GridTaskInstanceTooltipManual } from "./GridTaskInstanceTooltipManual";
 export { TaskRecentRunsTooltipManual } from "./TaskRecentRunsTooltipManual";
 
-// Advanced hooks
+// ✨ V2 wrappers (all-in-one, recommended for new code)
+export { GridTaskInstanceTooltip } from "./GridTaskInstanceTooltip";
+
+// ========================================
+// Advanced Hooks
+// ========================================
 export { useGridTooltip } from "./useGridTooltip";

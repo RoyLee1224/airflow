@@ -23,9 +23,9 @@ import type {
   TaskInstanceHistoryResponse,
   TaskInstanceResponse,
 } from "openapi/requests/types.gen";
-import { Tooltip, type TooltipProps } from "src/components/ui";
-import { TaskInstanceTooltipContent } from "src/components/tooltip/TaskInstanceTooltipContent";
 import { TOOLTIP_DEFAULTS } from "src/components/tooltip";
+import { TaskInstanceTooltipContent } from "src/components/tooltip/TaskInstanceTooltipContent";
+import { Tooltip, type TooltipProps } from "src/components/ui";
 
 type Props = {
   readonly customFields?: ReactNode;
@@ -42,8 +42,8 @@ const TaskInstanceTooltip = ({
   showTaskId = false,
   taskInstance,
   ...rest
-}: Props) => {
-  return taskInstance === undefined ? (
+}: Props) =>
+  taskInstance === undefined ? (
     children
   ) : (
     <Tooltip
@@ -66,6 +66,5 @@ const TaskInstanceTooltip = ({
       {children}
     </Tooltip>
   );
-};
 
 export default TaskInstanceTooltip;

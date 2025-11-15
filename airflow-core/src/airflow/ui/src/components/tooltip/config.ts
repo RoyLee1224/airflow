@@ -22,12 +22,11 @@ import type { TooltipProps } from "src/components/ui";
  * Default tooltip configuration for consistent behavior across the app
  */
 export const TOOLTIP_DEFAULTS = {
+  closeDelay: 0,
   closeOnPointerDown: true,
   closeOnScroll: true,
   openDelay: 300,
-  closeDelay: 0,
   portalled: true,
-  showArrow: true,
   positioning: {
     offset: {
       crossAxis: 5,
@@ -35,6 +34,7 @@ export const TOOLTIP_DEFAULTS = {
     },
     placement: "bottom-start" as const,
   },
+  showArrow: true,
 } satisfies Partial<TooltipProps>;
 
 /**
@@ -50,13 +50,13 @@ export const TOOLTIP_DEFAULTS = {
  */
 export const GRID_TOOLTIP_CONFIG = {
   ...TOOLTIP_DEFAULTS,
-  interactive: false,
-  openDelay: 500,
   closeDelay: 0,
   closeOnPointerDown: true,
   closeOnScroll: true,
+  interactive: false,
+  openDelay: 500,
   positioning: {
     ...TOOLTIP_DEFAULTS.positioning,
-    placement: "top" as const,
+    placement: "bottom" as const,
   },
 } satisfies Partial<TooltipProps>;

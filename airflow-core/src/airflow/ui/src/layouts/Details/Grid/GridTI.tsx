@@ -113,12 +113,7 @@ const Instance = ({ dagId, instance, isGroup, isMapped, onClick, runId, taskId }
           search: redirectionSearch,
         }}
       >
-        <TaskInstanceTooltip
-          {...GRID_TOOLTIP_CONFIG}
-          showRunId={false}
-          showTaskId
-          taskInstance={instance}
-        >
+        <TaskInstanceTooltip {...GRID_TOOLTIP_CONFIG} showRunId={false} showTaskId taskInstance={instance}>
           <Badge
             alignItems="center"
             borderRadius={4}

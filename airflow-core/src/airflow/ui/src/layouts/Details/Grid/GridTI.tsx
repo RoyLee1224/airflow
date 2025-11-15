@@ -17,14 +17,14 @@
  * under the License.
  */
 import { Badge, Flex } from "@chakra-ui/react";
-import type { MouseEvent } from "react";
+import type { MouseEvent, RefObject } from "react";
 import React, { useCallback } from "react";
 import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
 
 import type { LightGridTaskInstanceSummary } from "openapi/requests/types.gen";
+import { HoverTooltip } from "src/components/HoverTooltip";
 import { StateIcon } from "src/components/StateIcon";
-import TaskInstanceTooltip from "src/components/TaskInstanceTooltip";
-import { GRID_TOOLTIP_CONFIG } from "src/components/tooltip";
+import { GridTaskInstanceTooltipManual } from "src/components/tooltip/GridTaskInstanceTooltipManual";
 import { type HoverContextType, useHover } from "src/context/hover";
 import { buildTaskInstanceUrl } from "src/utils/links";
 
@@ -113,7 +113,17 @@ const Instance = ({ dagId, instance, isGroup, isMapped, onClick, runId, taskId }
           search: redirectionSearch,
         }}
       >
-        <TaskInstanceTooltip {...GRID_TOOLTIP_CONFIG} showRunId={false} showTaskId taskInstance={instance}>
+        <HoverTooltip
+          delayMs={500}
+          tooltip={(triggerRef: RefObject<HTMLElement>) => (
+            <GridTaskInstanceTooltipManual
+              instance={instance}
+              showRunId={false}
+              showTaskId
+              triggerRef={triggerRef}
+            />
+          )}
+        >
           <Badge
             alignItems="center"
             borderRadius={4}
@@ -128,7 +138,7 @@ const Instance = ({ dagId, instance, isGroup, isMapped, onClick, runId, taskId }
           >
             <StateIcon size={10} state={instance.state} />
           </Badge>
-        </TaskInstanceTooltip>
+        </HoverTooltip>
       </Link>
     </Flex>
   );

@@ -16,8 +16,24 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+// Chakra-based tooltip configuration
 export { TOOLTIP_DEFAULTS, GRID_TOOLTIP_CONFIG } from "./config";
+
+// Manual tooltip components and configuration
+export { ManualTooltip } from "./ManualTooltip";
+export {
+  MANUAL_TOOLTIP_DEFAULTS,
+  GRID_MANUAL_TOOLTIP_CONFIG,
+  CALENDAR_MANUAL_TOOLTIP_CONFIG,
+} from "./manualTooltipConfig";
+export type { ManualTooltipConfig, TooltipPlacement } from "./manualTooltipConfig";
+
+// Reusable tooltip content components
 export { TooltipField } from "./TooltipField";
 export { TaskInstanceTooltipContent } from "./TaskInstanceTooltipContent";
-export { useGridTooltip } from "./useGridTooltip";
+
+// Specialized tooltip implementations
 export { GridTaskInstanceTooltipManual } from "./GridTaskInstanceTooltipManual";
+
+// Advanced hooks
+export { useGridTooltip } from "./useGridTooltip";

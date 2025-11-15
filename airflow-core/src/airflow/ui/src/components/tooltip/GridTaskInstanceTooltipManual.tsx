@@ -16,11 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { Portal } from "@chakra-ui/react";
-import { useMemo, type ReactElement, type RefObject } from "react";
+import type { ReactElement, RefObject } from "react";
 
 import type { LightGridTaskInstanceSummary } from "openapi/requests/types.gen";
 
+import { ManualTooltip } from "./ManualTooltip";
+import { GRID_MANUAL_TOOLTIP_CONFIG } from "./manualTooltipConfig";
 import { TaskInstanceTooltipContent } from "./TaskInstanceTooltipContent";
 
 type Props = {
@@ -31,66 +32,17 @@ type Props = {
 };
 
 /**
- * Manual positioned tooltip for Grid view
- * Uses the same positioning strategy as CalendarTooltip for consistent behavior
- * This provides more control over positioning and prevents tooltip stacking
+ * Manual positioned tooltip for Grid task instances
+ * Uses ManualTooltip with grid-optimized configuration
+ * Provides better performance than Chakra tooltip for dense grid layouts
  */
 export const GridTaskInstanceTooltipManual = ({
   instance,
   showRunId = false,
   showTaskId = true,
   triggerRef,
-}: Props): ReactElement | null => {
-  const tooltipStyle = useMemo(() => {
-    if (!triggerRef.current) {
-      return { display: "none" };
-    }
-
-    const rect = triggerRef.current.getBoundingClientRect();
-
-    return {
-      backgroundColor: "var(--chakra-colors-bg-inverted)",
-      borderRadius: "4px",
-      boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
-      color: "var(--chakra-colors-fg-inverted)",
-      fontSize: "14px",
-      left: `${rect.left + globalThis.scrollX + rect.width / 2}px`,
-      padding: "8px 12px",
-      pointerEvents: "none" as const,
-      position: "absolute" as const,
-      top: `${rect.top + globalThis.scrollY - 8}px`,
-      transform: "translate(-50%, -100%)",
-      whiteSpace: "nowrap" as const,
-      zIndex: 1500,
-    };
-  }, [triggerRef]);
-
-  const arrowStyle = useMemo(
-    () => ({
-      borderLeft: "4px solid transparent",
-      borderRight: "4px solid transparent",
-      borderTop: "4px solid var(--chakra-colors-bg-inverted)",
-      bottom: "-4px",
-      content: '""',
-      height: 0,
-      left: "50%",
-      position: "absolute" as const,
-      transform: "translateX(-50%)",
-      width: 0,
-    }),
-    [],
-  );
-
-  return (
-    <Portal>
-      <div style={tooltipStyle}>
-        <div style={arrowStyle} />
-        <TaskInstanceTooltipContent
-          showRunId={showRunId}
-          showTaskId={showTaskId}
-          taskInstance={instance}
-        />
-      </div>
-    </Portal>
-  );
-};
+}: Props): ReactElement | null => (
+  <ManualTooltip config={GRID_MANUAL_TOOLTIP_CONFIG} triggerRef={triggerRef}>
+    <TaskInstanceTooltipContent showRunId={showRunId} showTaskId={showTaskId} taskInstance={instance} />
+  </ManualTooltip>
+);

@@ -12,9 +12,9 @@
 
 ## 📐 Architecture Overview
 
-### Layer 1: Base Components (Choose One)
+### Layer 1: Base Component
 
-#### Option A: CustomTooltip (Recommended for New Code)
+#### CustomTooltip (All-in-One Solution)
 ```tsx
 <CustomTooltip
   delayMs={500}
@@ -30,31 +30,12 @@
 - ✅ Integrated hover state management
 - ✅ No manual ref passing
 - ✅ Clean, intuitive API
+- ✅ High performance for dense layouts
 
-**Use when:**
-- Creating new tooltip implementations
-- Want the simplest possible code
-- Need manual positioning for performance
-
-#### Option B: HoverTooltip + ManualTooltip (Legacy)
-```tsx
-<HoverTooltip
-  delayMs={500}
-  tooltip={(triggerRef) => (
-    <ManualTooltip config={...} triggerRef={triggerRef}>
-      <Content />
-    </ManualTooltip>
-  )}
->
-  <TriggerElement />
-</HoverTooltip>
-```
-
-**Status:** Legacy pattern, kept for backward compatibility
-
-**Use when:**
-- Maintaining existing code
-- Need custom tooltip rendering logic
+**Use for:**
+- All new tooltip implementations
+- Custom tooltips with specific requirements
+- Performance-critical dense layouts (grids, calendars)
 
 ### Layer 2: Content Components (Shared)
 
@@ -106,66 +87,50 @@ Pre-configured tooltips for specific use cases:
 
 ---
 
-## 🔄 Migration Path
+## 🎯 Usage Patterns
 
-### Step 1: Identify Pattern
+### Pattern 1: Use Specialized Wrappers (Recommended)
 
-**Pattern A - HoverTooltip + ManualTooltip (Current)**
+For common use cases, use pre-configured wrappers:
+
 ```tsx
-<HoverTooltip
+import { GridTaskInstanceTooltip } from "src/components/tooltip";
+
+<GridTaskInstanceTooltip taskInstance={instance} showTaskId>
+  <Badge>Task</Badge>
+</GridTaskInstanceTooltip>
+```
+
+### Pattern 2: Use CustomTooltip Directly
+
+For custom tooltips, use the base component:
+
+```tsx
+import { CustomTooltip, GRID_MANUAL_TOOLTIP_CONFIG } from "src/components/tooltip";
+
+<CustomTooltip
   delayMs={500}
-  tooltip={(triggerRef) => (
-    <SomeManualTooltip triggerRef={triggerRef} data={data} />
-  )}
+  config={GRID_MANUAL_TOOLTIP_CONFIG}
+  content={<YourContent data={data} />}
 >
-  <Trigger />
-</HoverTooltip>
-```
-
-**Pattern B - TaskInstanceTooltip (Chakra)**
-```tsx
-<TaskInstanceTooltip {...GRID_TOOLTIP_CONFIG} taskInstance={instance}>
-  <Trigger />
-</TaskInstanceTooltip>
-```
-
-### Step 2: Choose Replacement
-
-#### For Pattern A → CustomTooltip
-```tsx
-// Before
-<HoverTooltip delayMs={500} tooltip={(ref) => <Manual triggerRef={ref} />}>
-  <Trigger />
-</HoverTooltip>
-
-// After
-<CustomTooltip delayMs={500} config={CONFIG} content={<Content />}>
   <Trigger />
 </CustomTooltip>
 ```
 
-#### For Pattern B → Specialized Wrapper
-```tsx
-// Before
-<TaskInstanceTooltip {...GRID_TOOLTIP_CONFIG} taskInstance={instance}>
-  <Trigger />
-</TaskInstanceTooltip>
+### Pattern 3: Create New Specialized Wrapper
 
-// After
-<GridTaskInstanceTooltip taskInstance={instance}>
-  <Trigger />
-</GridTaskInstanceTooltip>
-```
-
-### Step 3: Update Imports
+For repeated patterns, create a new wrapper:
 
 ```tsx
-// Remove
-import { HoverTooltip } from "src/components/HoverTooltip";
-import { SomeManualTooltip } from "...";
-
-// Add
-import { GridTaskInstanceTooltip } from "src/components/tooltip";
+export const YourTooltip = ({ data, children }) => (
+  <CustomTooltip
+    config={GRID_MANUAL_TOOLTIP_CONFIG}
+    content={<YourContent data={data} />}
+    delayMs={500}
+  >
+    {children}
+  </CustomTooltip>
+);
 ```
 
 ---
@@ -174,9 +139,8 @@ import { GridTaskInstanceTooltip } from "src/components/tooltip";
 
 ```
 tooltip/
-├── Core Components
-│   ├── ManualTooltip.tsx          # Legacy: requires HoverTooltip wrapper
-│   ├── CustomTooltip.tsx          # New: integrated hover management
+├── Core Component
+│   ├── CustomTooltip.tsx          # ✨ Integrated hover + positioning
 │   └── manualTooltipConfig.ts     # Shared configs & types
 │
 ├── Content Components (Pure)
@@ -188,6 +152,9 @@ tooltip/
 │   ├── GridTaskInstanceTooltip.tsx         # Grid view (14px cells)
 │   ├── TaskRecentRunsTooltip.tsx          # Bar chart (4px bars)
 │   └── [Other specialized tooltips]
+│
+├── Configuration
+│   └── config.ts           # Chakra tooltip configs
 │
 └── Documentation
     ├── README.md           # User guide
@@ -240,30 +207,27 @@ tooltip/
 
 ---
 
-## 📊 Comparison
+## 📊 Component Comparison
 
-| Aspect | HoverTooltip + ManualTooltip | CustomTooltip | Specialized Wrapper |
-|--------|------------------------------|---------------|---------------------|
-| Lines of code | 7-10 | 3-5 | 1-3 |
-| Ref management | Manual | Automatic | Automatic |
-| Type safety | Partial | Full | Full |
-| Reusability | Medium | High | Highest |
-| Boilerplate | High | Low | Minimal |
-| Flexibility | High | High | Medium |
+| Aspect | CustomTooltip | Specialized Wrapper |
+|--------|---------------|---------------------|
+| Lines of code | 3-5 | 1-3 |
+| Ref management | Automatic | Automatic |
+| Type safety | Full | Full |
+| Reusability | High | Highest |
+| Boilerplate | Low | Minimal |
+| Flexibility | High | Medium |
+| Configuration | Custom | Pre-configured |
 
 ---
 
 ## 🚀 Recommendations
 
-### For New Code
-1. **Simple tooltips** → Use `CustomTooltip` directly
-2. **Task instances** → Use `GridTaskInstanceTooltip` / `TaskRecentRunsTooltip`
-3. **Custom content** → Create content component + use `CustomTooltip`
-
-### For Existing Code
-1. **Low priority** → Keep as is (works fine)
-2. **Medium priority** → Replace HoverTooltip pattern with CustomTooltip
-3. **High priority** → Create specialized wrapper if used in 3+ places
+### For All Code
+1. **Common patterns** → Use specialized wrappers (GridTaskInstanceTooltip, TaskRecentRunsTooltip)
+2. **Custom tooltips** → Use `CustomTooltip` directly with custom content
+3. **Repeated patterns** → Create new specialized wrappers
+4. **Dense layouts** → Always use CustomTooltip-based solutions for performance
 
 ### For Large Elements (>50px)
 - Continue using Chakra `TaskInstanceTooltip`
@@ -272,23 +236,21 @@ tooltip/
 
 ---
 
-## 🔮 Future Considerations
+## 🔮 Architecture Status
 
-### Phase 1: Gradual Migration (Current)
-- ✅ CustomTooltip created
-- ✅ Specialized wrappers created
-- ✅ Migrated high-traffic areas (Grid, TaskRecentRuns, Calendar)
-- ✅ Updated documentation
+### ✅ Completed
+- CustomTooltip created with integrated hover + positioning
+- Specialized wrappers created (GridTaskInstanceTooltip, TaskRecentRunsTooltip)
+- Migrated high-traffic areas (Grid, TaskRecentRuns, Calendar)
+- Updated documentation
+- Removed all legacy components (ManualTooltip, *Manual wrappers)
+- Clean, zero-redundancy architecture
 
-### Phase 2: Deprecation (Future)
-- Mark `HoverTooltip` as deprecated
-- Add console warnings for old pattern
-- Provide codemod for automatic migration
-
-### Phase 3: Cleanup (Future)
-- Remove `HoverTooltip` component
-- Remove legacy `ManualTooltip` (keep CustomTooltip)
-- Consolidate all manual tooltips
+### 🎯 Current State
+- All tooltips use CustomTooltip as base
+- No legacy patterns remaining in codebase
+- Consistent API across all tooltip implementations
+- Optimized performance for dense layouts
 
 ---
 

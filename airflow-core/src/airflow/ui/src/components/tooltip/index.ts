@@ -23,13 +23,10 @@
 export { TOOLTIP_DEFAULTS, GRID_TOOLTIP_CONFIG } from "./config";
 
 // ========================================
-// Manual Tooltip - Base Components
+// Custom Tooltip - Base Component
 // ========================================
 
-// Legacy: Requires HoverTooltip wrapper (kept for backward compatibility)
-export { ManualTooltip } from "./ManualTooltip";
-
-// ✨ Recommended: Integrated hover management + positioning (no wrapper needed!)
+// ✨ Integrated hover management + positioning (no wrapper needed!)
 export { CustomTooltip } from "./CustomTooltip";
 
 // Configuration presets
@@ -50,11 +47,7 @@ export { TaskInstanceTooltipContent } from "./TaskInstanceTooltipContent";
 // Specialized Wrappers
 // ========================================
 
-// Legacy wrappers (require HoverTooltip)
-export { GridTaskInstanceTooltipManual } from "./GridTaskInstanceTooltipManual";
-export { TaskRecentRunsTooltipManual } from "./TaskRecentRunsTooltipManual";
-
-// ✨ V2 wrappers (all-in-one, recommended for new code)
+// ✨ Pre-configured wrappers (all-in-one, recommended)
 export { GridTaskInstanceTooltip } from "./GridTaskInstanceTooltip";
 export { TaskRecentRunsTooltip } from "./TaskRecentRunsTooltip";
 

@@ -287,12 +287,10 @@ Content Components (pure formatting)
 
 See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed design documentation.
 
-## Legacy Components
+## Best Practices
 
-For backward compatibility, these legacy components are still available but not recommended for new code:
-
-- `ManualTooltip` - Requires HoverTooltip wrapper
-- `GridTaskInstanceTooltipManual` - Requires HoverTooltip wrapper
-- `TaskRecentRunsTooltipManual` - Requires HoverTooltip wrapper
-
-**Recommendation:** Use `CustomTooltip` or specialized wrappers for all new code.
+**For all tooltip implementations:**
+- ✅ Use `CustomTooltip` as the base component
+- ✅ Use specialized wrappers (GridTaskInstanceTooltip, TaskRecentRunsTooltip) when available
+- ✅ Create new specialized wrappers for repeated patterns
+- ✅ Keep content components pure (no positioning logic)

@@ -45,23 +45,21 @@ return <div style={tooltipStyle}>{/* content */}</div>;
 
 ---
 
-### 階段 2: 內容分離（當前主分支）
+### 階段 2: 內容分離（已完成）
 ```tsx
 // ✅ Extracted content component
 <TaskInstanceTooltip taskInstance={instance}>
   <Badge />
 </TaskInstanceTooltip>
 
-// ✅ Reusable positioning logic
-<ManualTooltip config={CONFIG} triggerRef={ref}>
-  <TaskInstanceTooltipContent taskInstance={instance} />
-</ManualTooltip>
+// ✅ Reusable content components
+<TaskInstanceTooltipContent taskInstance={instance} />
 ```
 
 **改進:**
 - ✅ 內容邏輯可重用
-- ✅ 定位邏輯標準化
-- ⚠️ 但仍需要 HoverTooltip 包裝
+- ✅ 格式化邏輯標準化
+- ✅ 為完全集成打下基礎
 
 ---
 
@@ -347,22 +345,26 @@ const triggerRef = useRef(null);
 
 ## 🚀 實施計畫
 
-### 立即可做 (不破壞現有代碼)
-1. ✅ 添加 CustomTooltip.tsx
-2. ✅ 添加 GridTaskInstanceTooltip.tsx
-3. ✅ 添加 TaskRecentRunsTooltip.tsx
-4. ✅ 更新文檔說明新舊兩種方式
+### ✅ 已完成
+1. ✅ 添加 CustomTooltip.tsx (整合 hover + 定位)
+2. ✅ 添加 GridTaskInstanceTooltip.tsx (Grid 專用包裝)
+3. ✅ 添加 TaskRecentRunsTooltip.tsx (Bar chart 專用包裝)
+4. ✅ 更新完整文檔 (README, ARCHITECTURE, REFACTORING_GUIDE)
 5. ✅ 遷移 Grid、TaskRecentRuns、Calendar 到新架構
+6. ✅ 移除所有 legacy 組件 (ManualTooltip, *Manual wrappers)
+7. ✅ 清理 index.ts，只保留新架構組件
 
-### 漸進式遷移 (可選)
-1. 新功能使用 CustomTooltip
-2. 修改現有代碼時順便升級
-3. 保留舊代碼向後兼容
+### 🎯 當前架構
+- **零冗餘**: 沒有 legacy code，只保留 CustomTooltip 架構
+- **統一 API**: 所有 tooltip 使用一致的模式
+- **高性能**: 針對密集布局優化
+- **易維護**: 清晰的分層和職責劃分
 
-### 未來清理 (當所有代碼遷移後)
-1. 標記 HoverTooltip 為 @deprecated
-2. 移除舊的 ManualTooltip (keep CustomTooltip)
-3. 統一所有 tooltip 為新架構
+### 💡 新代碼指南
+1. 使用專用包裝器 (GridTaskInstanceTooltip, TaskRecentRunsTooltip)
+2. 若無專用包裝器，直接使用 CustomTooltip
+3. 重複模式超過 3 處，創建新的專用包裝器
+4. 保持內容組件純粹 (無定位邏輯)
 
 ---
 
@@ -383,11 +385,11 @@ const triggerRef = useRef(null);
 ## 🎓 總結
 
 ### HoverTooltip 還需要嗎？
-**答案: 不需要了** ✅
+**答案: 完全不需要** ✅
 
 - CustomTooltip 整合了所有功能
 - 更簡潔、更直觀
-- 向後兼容(保留 HoverTooltip 供舊代碼使用)
+- 零冗餘，已移除所有 legacy code
 
 ### 最佳實踐架構
 ```

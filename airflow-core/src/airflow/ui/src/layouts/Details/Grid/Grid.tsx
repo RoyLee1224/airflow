@@ -29,7 +29,7 @@ import { useOpenGroups } from "src/context/openGroups";
 import { useNavigation } from "src/hooks/navigation";
 import { useGridRuns } from "src/queries/useGridRuns.ts";
 import { useGridStructure } from "src/queries/useGridStructure.ts";
-import { useGridTiSummariesBatchAPI } from "src/queries/useGridTiSummariesBatchAPI.ts";
+import { useGridTiSummariesBatch } from "src/queries/useGridTiSummariesBatch.ts";
 import { isStatePending } from "src/utils";
 
 import { Bar } from "./Bar";
@@ -78,8 +78,8 @@ export const Grid = ({ dagRunState, limit, runType, showGantt, triggeringUser }:
     triggeringUser,
   });
 
-  // Fetch TI summaries for all runs using batch API (1 request instead of N)
-  const { data: tiSummariesByRunId } = useGridTiSummariesBatchAPI({
+  // Fetch TI summaries for all runs in parallel
+  const { data: tiSummariesByRunId } = useGridTiSummariesBatch({
     dagId,
     runs: gridRuns,
   });

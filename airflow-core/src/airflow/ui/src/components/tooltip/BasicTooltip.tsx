@@ -20,8 +20,47 @@ import { Portal } from "@chakra-ui/react";
 import type { CSSProperties, ReactElement, ReactNode } from "react";
 import { cloneElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import type { ManualTooltipConfig, TooltipPlacement } from "./manualTooltipConfig";
-import { MANUAL_TOOLTIP_DEFAULTS } from "./manualTooltipConfig";
+export type TooltipPlacement =
+  | "top"
+  | "bottom"
+  | "left"
+  | "right"
+  | "top-start"
+  | "top-end"
+  | "bottom-start"
+  | "bottom-end";
+
+export type ManualTooltipConfig = {
+  /**
+   * Show arrow indicator
+   */
+  readonly showArrow?: boolean;
+
+  /**
+   * Tooltip placement relative to trigger element
+   */
+  readonly placement?: TooltipPlacement;
+
+  /**
+   * Distance from trigger element (in pixels)
+   */
+  readonly offset?: number;
+
+  /**
+   * Custom CSS styles for tooltip container
+   */
+  readonly containerStyle?: CSSProperties;
+
+  /**
+   * Custom CSS styles for arrow
+   */
+  readonly arrowStyle?: CSSProperties;
+
+  /**
+   * z-index for tooltip
+   */
+  readonly zIndex?: number;
+};
 
 type Props = {
   /**
@@ -216,10 +255,10 @@ export const BasicTooltip = ({ children, config, content, delayMs = 500 }: Props
   const {
     arrowStyle: customArrowStyle,
     containerStyle: customContainerStyle,
-    offset = MANUAL_TOOLTIP_DEFAULTS.offset!,
-    placement = MANUAL_TOOLTIP_DEFAULTS.placement!,
-    showArrow = MANUAL_TOOLTIP_DEFAULTS.showArrow,
-    zIndex = MANUAL_TOOLTIP_DEFAULTS.zIndex,
+    offset = 8,
+    placement = "bottom",
+    showArrow = true,
+    zIndex = 1500,
   } = config ?? {};
 
   const handleMouseEnter = useCallback(() => {

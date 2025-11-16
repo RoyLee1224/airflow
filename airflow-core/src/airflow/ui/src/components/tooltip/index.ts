@@ -18,17 +18,7 @@
  */
 
 // ========================================
-// Chakra-based Tooltips
+// Basic Tooltip - Foundation Component
 // ========================================
-export { TOOLTIP_DEFAULTS, GRID_TOOLTIP_CONFIG } from "./config";
-
-// ========================================
-// Basic Tooltip - Base Component
-// ========================================
-
-// ✨ Foundation component for all tooltips
 export { BasicTooltip } from "./BasicTooltip";
-
-// Configuration types and defaults
-export { MANUAL_TOOLTIP_DEFAULTS } from "./manualTooltipConfig";
-export type { ManualTooltipConfig, TooltipPlacement } from "./manualTooltipConfig";
+export type { ManualTooltipConfig, TooltipPlacement } from "./BasicTooltip";

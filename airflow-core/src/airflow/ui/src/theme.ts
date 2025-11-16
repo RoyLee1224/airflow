@@ -38,6 +38,9 @@ export const customConfig = defineConfig({
   globalCss: {
     // Optimized for instant hover response
     "[data-task-id]": {
+      // CSS Containment: isolate style recalculation
+      // Browser won't need to check siblings/parents when this changes
+      contain: "layout style paint",
       // Hint to browser: optimize for background-color changes
       willChange: "background-color",
       // No transition - instant highlight

@@ -29,78 +29,49 @@ import { Tooltip } from "src/components/ui";
 import { type HoverContextType, useHover } from "src/context/hover";
 import { buildTaskInstanceUrl } from "src/utils/links";
 
-// Ultra-optimized hover handlers using requestAnimationFrame
-// This batches DOM updates and prevents layout thrashing
-let rafId: number | null = null;
-let currentHoveredId: string | null = null;
+// BEST PRACTICE: Dynamic style injection - Single DOM operation
+// Inject CSS rule that highlights all matching tasks
+// Browser's CSS engine handles everything - zero querySelectorAll!
+let styleElement: HTMLStyleElement | null = null;
+
+const getOrCreateStyleElement = () => {
+  if (!styleElement && typeof document !== "undefined") {
+    styleElement = document.getElementById("grid-hover-style") as HTMLStyleElement;
+    if (!styleElement) {
+      styleElement = document.createElement("style");
+      styleElement.id = "grid-hover-style";
+      document.head.appendChild(styleElement);
+    }
+  }
+
+  return styleElement;
+};
 
 const handleMouseEnter =
   (setHoveredTaskId: HoverContextType["setHoveredTaskId"], taskId: string) =>
   () => {
     const normalizedId = taskId.replaceAll(".", "-");
+    const style = getOrCreateStyleElement();
 
-    // Cancel any pending animation frame
-    if (rafId !== null) {
-      cancelAnimationFrame(rafId);
+    if (style) {
+      // Single DOM operation: Update style tag content
+      // Browser automatically applies to ALL matching elements
+      style.textContent = `[data-task-id="${normalizedId}"] { background-color: var(--chakra-colors-info-subtle) !important; }`;
     }
 
-    // Skip if already hovering this task
-    if (currentHoveredId === normalizedId) {
-      return;
-    }
-
-    // Batch DOM updates in next animation frame
-    rafId = requestAnimationFrame(() => {
-      // Clear previous hover state
-      if (currentHoveredId) {
-        const prevTasks = document.querySelectorAll<HTMLDivElement>(
-          `[data-task-id="${currentHoveredId}"]`,
-        );
-
-        prevTasks.forEach((task) => {
-          task.classList.remove("grid-task-hovered");
-        });
-      }
-
-      // Set new hover state
-      const tasks = document.querySelectorAll<HTMLDivElement>(`[data-task-id="${normalizedId}"]`);
-
-      tasks.forEach((task) => {
-        task.classList.add("grid-task-hovered");
-      });
-
-      currentHoveredId = normalizedId;
-      setHoveredTaskId(taskId);
-      rafId = null;
-    });
+    setHoveredTaskId(taskId);
   };
 
-const handleMouseLeave =
-  (setHoveredTaskId: HoverContextType["setHoveredTaskId"], taskId: string) => () => {
-    const normalizedId = taskId.replaceAll(".", "-");
+const handleMouseLeave = (setHoveredTaskId: HoverContextType["setHoveredTaskId"]) => () => {
+  const style = getOrCreateStyleElement();
 
-    // Only clear if this is the currently hovered task
-    if (currentHoveredId !== normalizedId) {
-      return;
-    }
+  if (style) {
+    // Single DOM operation: Clear style tag
+    style.textContent = "";
+  }
 
-    // Cancel any pending animation frame
-    if (rafId !== null) {
-      cancelAnimationFrame(rafId);
-    }
-
-    rafId = requestAnimationFrame(() => {
-      const tasks = document.querySelectorAll<HTMLDivElement>(`[data-task-id="${normalizedId}"]`);
-
-      tasks.forEach((task) => {
-        task.classList.remove("grid-task-hovered");
-      });
-
-      currentHoveredId = null;
-      setHoveredTaskId(undefined);
-      rafId = null;
-    });
-  };
+  setHoveredTaskId(undefined);
+};
 
 type Props = {
   readonly dagId: string;
@@ -122,7 +93,7 @@ const Instance = ({ dagId, instance, isGroup, isMapped, onClick, runId, taskId }
   const [searchParams] = useSearchParams();
 
   const onMouseEnter = handleMouseEnter(setHoveredTaskId, taskId);
-  const onMouseLeave = handleMouseLeave(setHoveredTaskId, taskId);
+  const onMouseLeave = handleMouseLeave(setHoveredTaskId);
 
   const getTaskUrl = useCallback(
     () =>

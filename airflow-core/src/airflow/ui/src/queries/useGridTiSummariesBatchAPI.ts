@@ -18,6 +18,7 @@
  */
 import { useQuery } from "@tanstack/react-query";
 
+import { GridService } from "openapi/requests";
 import type { GridRunsResponse, GridTISummaries } from "openapi/requests";
 import { isStatePending, useAutoRefresh } from "src/utils";
 
@@ -59,22 +60,13 @@ export const useGridTiSummariesBatchAPI = ({
         return null;
       }
 
-      // Call the batch API endpoint
-      const response = await fetch(`/api/v1/ui/grid/ti_summaries_batch/${dagId}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(runIds),
+      // Call the batch API endpoint using the generated GridService client
+      const response = await GridService.getGridTiSummariesBatch({
+        dagId,
+        requestBody: runIds,
       });
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch TI summaries batch: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-
-      return result.summaries;
+      return response.summaries;
     },
     enabled: Boolean(dagId) && runIds.length > 0,
     placeholderData: (prev) => prev,

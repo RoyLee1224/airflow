@@ -7801,14 +7801,15 @@ export const $GridTISummariesBatch = {
             title: 'Dag Id'
         },
         summaries: {
+            type: 'object',
             additionalProperties: {
+                type: 'array',
                 items: {
                     '$ref': '#/components/schemas/LightGridTaskInstanceSummary'
-                },
-                type: 'array'
+                }
             },
-            type: 'object',
-            title: 'Summaries'
+            title: 'Summaries',
+            description: 'Mapping of run_id to task instance summaries'
         }
     },
     type: 'object',

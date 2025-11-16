@@ -1940,6 +1940,9 @@ export type GridTISummaries = {
  */
 export type GridTISummariesBatch = {
     dag_id: string;
+    /**
+     * Mapping of run_id to task instance summaries
+     */
     summaries: {
         [key: string]: Array<LightGridTaskInstanceSummary>;
     };

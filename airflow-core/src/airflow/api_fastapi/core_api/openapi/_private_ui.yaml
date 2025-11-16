@@ -952,12 +952,26 @@ paths:
       tags:
       - Grid
       summary: Get Grid Ti Summaries Batch
-      description: "Get TI summaries for multiple DAG runs in a single request.\n\n\
-        This is a performance-optimized endpoint that reduces N requests to 1 request\n\
-        by batching multiple run_ids together. Instead of:\n  - N sequential/parallel\
-        \ requests (one per run)\n  - N database queries (one per run)\n\nWe now have:\n\
-        \  - 1 request\n  - 1 optimized database query for all runs\n\nExpected performance\
-        \ improvement: 80-95% reduction in load time."
+      description: 'Get TI summaries for multiple DAG runs in a single request.
+
+
+        This is a performance-optimized endpoint that reduces N requests to 1 request
+
+        by batching multiple run_ids together. Instead of:
+
+          - N sequential/parallel requests (one per run)
+
+          - N database queries (one per run)
+
+
+        We now have:
+
+          - 1 request
+
+          - 1 optimized database query for all runs
+
+
+        Expected performance improvement: 80-95% reduction in load time.'
       operationId: get_grid_ti_summaries_batch
       security:
       - OAuth2PasswordBearer: []
@@ -978,6 +992,7 @@ paths:
               items:
                 type: string
               title: Run Ids
+              description: List of run IDs to fetch TI summaries for
       responses:
         '200':
           description: Successful Response
@@ -1991,12 +2006,13 @@ components:
           type: string
           title: Dag Id
         summaries:
+          type: object
           additionalProperties:
+            type: array
             items:
               $ref: '#/components/schemas/LightGridTaskInstanceSummary'
-            type: array
-          type: object
           title: Summaries
+          description: Mapping of run_id to task instance summaries
       type: object
       required:
       - dag_id

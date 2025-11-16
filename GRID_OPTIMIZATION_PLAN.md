@@ -13,7 +13,7 @@ Grid view performance degraded significantly with large DAGs (6k+ tasks) and mul
 ```
 Phase 1: Sequential → Parallel Requests (✅ DONE)
 Phase 2: Backend Batch API         (✅ DONE)
-Phase 3: Frontend Integration       (⏳ IN PROGRESS)
+Phase 3: Frontend Integration       (✅ DONE)
 ```
 
 ---
@@ -104,44 +104,29 @@ def test_ti_summaries_batch_max_limit()       # Safety: max 50 runs
 
 ---
 
-## Phase 3: Frontend Integration (⏳ In Progress)
+## Phase 3: Frontend Integration (✅ Completed)
 
-### Current Status: Using Parallel Requests
+### Implementation
 
-**Why not using Batch API yet?**
-- Batch API endpoint not in OpenAPI spec
-- Auto-generated client doesn't include the new endpoint
-- Manual `fetch()` calls have CORS/auth issues
+**Changes Made:**
+- Manually added batch API endpoint to `_private_ui.yaml` OpenAPI spec
+- Added `GridTISummariesBatch` schema definition
+- Regenerated TypeScript client with `pnpm run codegen`
+- Updated `useGridTiSummariesBatchAPI.ts` to use generated `GridService.getGridTiSummariesBatch()`
+- Updated `Grid.tsx` to use batch API instead of parallel requests
 
-### Immediate Next Steps
+### Key Learnings
 
-1. **Regenerate OpenAPI Spec**
-   ```bash
-   # Need to run OpenAPI generator to include new POST endpoint
-   npm run generate-api
-   ```
+**Challenge Encountered:**
+- OpenAPI spec auto-generation from FastAPI requires full Python environment
+- Resolved by manually adding endpoint and schema to `_private_ui.yaml`
 
-2. **Update Frontend Hook**
-   ```typescript
-   // Switch from parallel to batch
-   - useGridTiSummariesBatch     // Current: N parallel requests
-   + useGridTiSummariesBatchAPI   // Future: 1 batch request
-   ```
-
-3. **Test Integration**
-   - Verify API routing works
-   - Check auth/CORS configuration
-   - Validate response format
-
-### Alternative: Manual OpenAPI Entry
-
-If auto-generation doesn't work, manually add to OpenAPI spec:
-
+**Solution:**
 ```yaml
 paths:
   /ui/grid/ti_summaries_batch/{dag_id}:
     post:
-      operationId: getGridTiSummariesBatch
+      operationId: get_grid_ti_summaries_batch
       parameters:
         - name: dag_id
           in: path
@@ -159,6 +144,25 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GridTISummariesBatch'
+```
+
+### Final API Usage
+
+```typescript
+// Frontend hook using generated client
+const { data: tiSummariesByRunId } = useGridTiSummariesBatchAPI({
+  dagId,
+  runs: gridRuns,
+});
+
+// Grid.tsx passes data to Bar components
+{gridRuns?.map((dr: GridRunsResponse) => (
+  <Bar
+    key={dr.run_id}
+    tiSummaries={tiSummariesByRunId?.[dr.run_id]}
+    ...
+  />
+))}
 ```
 
 ---
@@ -306,9 +310,11 @@ useEffect(() => {
 ## 📝 Commit History
 
 ```
-6a67e51 - Optimize Grid view by parallelizing TI summaries requests
-5e62bb8 - Add batch API endpoint for Grid TI summaries
+6a67e51 - Optimize Grid view by parallelizing TI summaries requests (Phase 1)
+5e62bb8 - Add batch API endpoint for Grid TI summaries (Phase 2)
 211f38f - Temporarily use parallel requests instead of batch API for frontend
+7ee7bb6 - Add batch API to OpenAPI spec and regenerate client
+64a3242 - Complete Grid view batch API integration (Phase 3)
 ```
 
 ---

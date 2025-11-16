@@ -55,8 +55,9 @@ const handleMouseEnter =
 
     if (style) {
       // Single DOM operation: Update style tag content
-      // Browser automatically applies to ALL matching elements
-      style.textContent = `[data-task-id="${normalizedId}"] { background-color: var(--chakra-colors-info-subtle) !important; }`;
+      // Using direct color values instead of CSS variables for faster parsing
+      // Light mode color: #dbeafe (blue-100), Dark mode handled by color scheme
+      style.textContent = `[data-task-id="${normalizedId}"]{background-color:#dbeafe!important}`;
     }
 
     setHoveredTaskId(taskId);

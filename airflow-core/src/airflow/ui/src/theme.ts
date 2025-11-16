@@ -36,10 +36,11 @@ const generateSemanticTokens = (color: string, darkContrast: string = "white") =
 export const customConfig = defineConfig({
   // See https://chakra-ui.com/docs/theming/colors for more information on the colors used here.
   globalCss: {
-    // Base transition for smooth hover effect
-    // Actual hover styling is injected dynamically via <style> tag for best performance
+    // Optimized for instant hover response
     "[data-task-id]": {
-      transition: "background-color 0.2s",
+      // Hint to browser: optimize for background-color changes
+      willChange: "background-color",
+      // No transition - instant highlight
     },
   },
   theme: {

@@ -61,8 +61,9 @@ const onMouseEnter = (nodeId: string, setHoveredTaskId: HoverContextType["setHov
 
   if (style) {
     // Single DOM operation: Update style tag content
-    // Browser automatically applies to ALL matching elements
-    style.textContent = `[data-task-id="${normalizedId}"] { background-color: var(--chakra-colors-info-subtle) !important; }`;
+    // Using direct color values instead of CSS variables for faster parsing
+    // Minified CSS for faster browser parsing
+    style.textContent = `[data-task-id="${normalizedId}"]{background-color:#dbeafe!important}`;
   }
 
   setHoveredTaskId(nodeId);
@@ -97,9 +98,11 @@ export const TaskNames = ({ nodes, onRowClick }: Props) => {
       id={`task-${node.id.replaceAll(".", "-")}`}
       key={node.id}
       maxHeight="20px"
+      _hover={{
+        bg: "info.subtle", // Native CSS hover - instant response!
+      }}
       onMouseEnter={() => onMouseEnter(node.id, setHoveredTaskId)}
       onMouseLeave={() => onMouseLeave(setHoveredTaskId)}
-      transition="background-color 0.2s"
     >
       {node.isGroup ? (
         <Link asChild data-testid={node.id} display="block" width="100%">

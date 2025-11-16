@@ -202,7 +202,6 @@ const getArrowStyle = (placement: TooltipPlacement, customArrowStyle?: CSSProper
  * ```tsx
  * <BasicTooltip
  *   delayMs={500}
- *   config={GRID_MANUAL_TOOLTIP_CONFIG}
  *   content={<div>Tooltip content</div>}
  * >
  *   <Badge>Task</Badge>

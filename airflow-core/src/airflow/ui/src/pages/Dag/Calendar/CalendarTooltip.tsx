@@ -20,7 +20,7 @@ import { Box, HStack, Text, VStack } from "@chakra-ui/react";
 import type { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
 
-import { BasicTooltip, CALENDAR_MANUAL_TOOLTIP_CONFIG } from "src/components/tooltip";
+import { BasicTooltip } from "src/components/tooltip";
 
 import type { CalendarCellData, CalendarColorMode } from "./types";
 
@@ -114,7 +114,6 @@ export const CalendarTooltip = ({
   return (
     <BasicTooltip
       config={{
-        ...CALENDAR_MANUAL_TOOLTIP_CONFIG,
         containerStyle: {
           minWidth: "200px",
           whiteSpace: "nowrap",

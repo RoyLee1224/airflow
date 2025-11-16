@@ -59,28 +59,7 @@ export const MANUAL_TOOLTIP_DEFAULTS: ManualTooltipConfig = {
   arrowStyle: {},
   containerStyle: {},
   offset: 8,
-  placement: "top",
+  placement: "bottom",
   showArrow: true,
   zIndex: 1500,
-};
-
-/**
- * Grid-optimized manual tooltip configuration
- * - Top placement to avoid covering content below
- * - Minimal offset for compact grid layouts
- */
-export const GRID_MANUAL_TOOLTIP_CONFIG: ManualTooltipConfig = {
-  ...MANUAL_TOOLTIP_DEFAULTS,
-  offset: 8,
-  placement: "top",
-};
-
-/**
- * Calendar-optimized manual tooltip configuration
- * - Bottom placement to match existing behavior
- */
-export const CALENDAR_MANUAL_TOOLTIP_CONFIG: ManualTooltipConfig = {
-  ...MANUAL_TOOLTIP_DEFAULTS,
-  offset: 8,
-  placement: "bottom",
 };

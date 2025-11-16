@@ -26,7 +26,7 @@ import type {
   TaskInstanceResponse,
 } from "openapi/requests/types.gen";
 import Time from "src/components/Time";
-import { BasicTooltip, GRID_MANUAL_TOOLTIP_CONFIG } from "src/components/tooltip";
+import { BasicTooltip } from "src/components/tooltip";
 import { renderDuration } from "src/utils";
 
 type Props = {
@@ -87,7 +87,7 @@ const TaskInstanceTooltip = ({
   );
 
   return (
-    <BasicTooltip config={GRID_MANUAL_TOOLTIP_CONFIG} content={content} delayMs={delayMs}>
+    <BasicTooltip content={content} delayMs={delayMs}>
       {children}
     </BasicTooltip>
   );

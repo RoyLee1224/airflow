@@ -29,10 +29,6 @@ export { TOOLTIP_DEFAULTS, GRID_TOOLTIP_CONFIG } from "./config";
 // ✨ Foundation component for all tooltips
 export { BasicTooltip } from "./BasicTooltip";
 
-// Configuration presets
-export {
-  MANUAL_TOOLTIP_DEFAULTS,
-  GRID_MANUAL_TOOLTIP_CONFIG,
-  CALENDAR_MANUAL_TOOLTIP_CONFIG,
-} from "./manualTooltipConfig";
+// Configuration types and defaults
+export { MANUAL_TOOLTIP_DEFAULTS } from "./manualTooltipConfig";
 export type { ManualTooltipConfig, TooltipPlacement } from "./manualTooltipConfig";

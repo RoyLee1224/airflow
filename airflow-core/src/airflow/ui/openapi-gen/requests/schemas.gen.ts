@@ -7794,6 +7794,29 @@ export const $GridTISummaries = {
     description: 'DAG Run model for the Grid UI.'
 } as const;
 
+export const $GridTISummariesBatch = {
+    properties: {
+        dag_id: {
+            type: 'string',
+            title: 'Dag Id'
+        },
+        summaries: {
+            additionalProperties: {
+                items: {
+                    '$ref': '#/components/schemas/LightGridTaskInstanceSummary'
+                },
+                type: 'array'
+            },
+            type: 'object',
+            title: 'Summaries'
+        }
+    },
+    type: 'object',
+    required: ['dag_id', 'summaries'],
+    title: 'GridTISummariesBatch',
+    description: "Batch response for multiple DAG runs' TI summaries."
+} as const;
+
 export const $HistoricalMetricDataResponse = {
     properties: {
         dag_run_types: {

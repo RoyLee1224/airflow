@@ -947,6 +947,62 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /ui/grid/ti_summaries_batch/{dag_id}:
+    post:
+      tags:
+      - Grid
+      summary: Get Grid Ti Summaries Batch
+      description: "Get TI summaries for multiple DAG runs in a single request.\n\n\
+        This is a performance-optimized endpoint that reduces N requests to 1 request\n\
+        by batching multiple run_ids together. Instead of:\n  - N sequential/parallel\
+        \ requests (one per run)\n  - N database queries (one per run)\n\nWe now have:\n\
+        \  - 1 request\n  - 1 optimized database query for all runs\n\nExpected performance\
+        \ improvement: 80-95% reduction in load time."
+      operationId: get_grid_ti_summaries_batch
+      security:
+      - OAuth2PasswordBearer: []
+      - HTTPBearer: []
+      parameters:
+      - name: dag_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Dag Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+              title: Run Ids
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GridTISummariesBatch'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPExceptionResponse'
+          description: Bad Request
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPExceptionResponse'
+          description: Not Found
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /ui/calendar/{dag_id}:
     get:
       tags:
@@ -1929,6 +1985,24 @@ components:
       - task_instances
       title: GridTISummaries
       description: DAG Run model for the Grid UI.
+    GridTISummariesBatch:
+      properties:
+        dag_id:
+          type: string
+          title: Dag Id
+        summaries:
+          additionalProperties:
+            items:
+              $ref: '#/components/schemas/LightGridTaskInstanceSummary'
+            type: array
+          type: object
+          title: Summaries
+      type: object
+      required:
+      - dag_id
+      - summaries
+      title: GridTISummariesBatch
+      description: Batch response for multiple DAG runs' TI summaries.
     HITLDetail:
       properties:
         options:

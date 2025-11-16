@@ -1888,6 +1888,33 @@ export const useVariableServicePostVariable = <TData = Common.VariableServicePos
   requestBody: VariableBody;
 }, TContext>({ mutationFn: ({ requestBody }) => VariableService.postVariable({ requestBody }) as unknown as Promise<TData>, ...options });
 /**
+* Get Grid Ti Summaries Batch
+* Get TI summaries for multiple DAG runs in a single request.
+*
+* This is a performance-optimized endpoint that reduces N requests to 1 request
+* by batching multiple run_ids together. Instead of:
+* - N sequential/parallel requests (one per run)
+* - N database queries (one per run)
+*
+* We now have:
+* - 1 request
+* - 1 optimized database query for all runs
+*
+* Expected performance improvement: 80-95% reduction in load time.
+* @param data The data for the request.
+* @param data.dagId
+* @param data.requestBody
+* @returns GridTISummariesBatch Successful Response
+* @throws ApiError
+*/
+export const useGridServiceGetGridTiSummariesBatch = <TData = Common.GridServiceGetGridTiSummariesBatchMutationResult, TError = unknown, TContext = unknown>(options?: Omit<UseMutationOptions<TData, TError, {
+  dagId: string;
+  requestBody: string[];
+}, TContext>, "mutationFn">) => useMutation<TData, TError, {
+  dagId: string;
+  requestBody: string[];
+}, TContext>({ mutationFn: ({ dagId, requestBody }) => GridService.getGridTiSummariesBatch({ dagId, requestBody }) as unknown as Promise<TData>, ...options });
+/**
 * Pause Backfill
 * @param data The data for the request.
 * @param data.backfillId

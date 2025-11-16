@@ -1936,6 +1936,16 @@ export type GridTISummaries = {
 };
 
 /**
+ * Batch response for multiple DAG runs' TI summaries.
+ */
+export type GridTISummariesBatch = {
+    dag_id: string;
+    summaries: {
+        [key: string]: Array<LightGridTaskInstanceSummary>;
+    };
+};
+
+/**
  * Historical Metric Data serializer for responses.
  */
 export type HistoricalMetricDataResponse = {
@@ -3406,6 +3416,13 @@ export type GetGridTiSummariesData = {
 };
 
 export type GetGridTiSummariesResponse = GridTISummaries;
+
+export type GetGridTiSummariesBatchData = {
+    dagId: string;
+    requestBody: Array<(string)>;
+};
+
+export type GetGridTiSummariesBatchResponse = GridTISummariesBatch;
 
 export type GetCalendarData = {
     dagId: string;
@@ -6547,6 +6564,29 @@ export type $OpenApiTs = {
                  * Successful Response
                  */
                 200: GridTISummaries;
+                /**
+                 * Bad Request
+                 */
+                400: HTTPExceptionResponse;
+                /**
+                 * Not Found
+                 */
+                404: HTTPExceptionResponse;
+                /**
+                 * Validation Error
+                 */
+                422: HTTPValidationError;
+            };
+        };
+    };
+    '/ui/grid/ti_summaries_batch/{dag_id}': {
+        post: {
+            req: GetGridTiSummariesBatchData;
+            res: {
+                /**
+                 * Successful Response
+                 */
+                200: GridTISummariesBatch;
                 /**
                  * Bad Request
                  */

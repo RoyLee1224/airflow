@@ -48,10 +48,9 @@ export const Bar = ({ max, nodes, onCellClick, onColumnClick, run }: Props) => {
 
   return (
     <Box
-      _hover={{ bg: "brand.subtle" }}
+      _hover={{ bg: "info.subtle" }}
       bg={isSelected ? "brand.muted" : undefined}
       position="relative"
-      transition="background-color 0.2s"
     >
       <Flex
         alignItems="flex-end"

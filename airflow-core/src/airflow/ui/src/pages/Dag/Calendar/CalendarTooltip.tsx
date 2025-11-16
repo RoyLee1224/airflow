@@ -113,6 +113,10 @@ export const CalendarTooltip = ({
     <BasicTooltip
       config={{
         placement: "bottom-start",
+        arrowStyle: {
+          left: "50%",
+          transform: "translateX(-50%)",
+        },
         containerStyle: {
           minWidth: "200px",
           whiteSpace: "nowrap",

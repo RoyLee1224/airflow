@@ -34,7 +34,7 @@ const handleMouseEnter =
     const tasks = document.querySelectorAll<HTMLDivElement>(`#${event.currentTarget.id}`);
 
     tasks.forEach((task) => {
-      task.style.backgroundColor = "var(--chakra-colors-info-subtle)";
+      task.classList.add("grid-task-hovered");
     });
 
     setHoveredTaskId(event.currentTarget.id.replaceAll("-", "."));
@@ -44,7 +44,7 @@ const handleMouseLeave = (taskId: string, setHoveredTaskId: HoverContextType["se
   const tasks = document.querySelectorAll<HTMLDivElement>(`#task-${taskId.replaceAll(".", "-")}`);
 
   tasks.forEach((task) => {
-    task.style.backgroundColor = "";
+    task.classList.remove("grid-task-hovered");
   });
 
   setHoveredTaskId(undefined);

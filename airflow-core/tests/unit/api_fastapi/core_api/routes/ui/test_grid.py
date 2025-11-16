@@ -776,3 +776,62 @@ class TestGetGridDataEndpoint:
         # Optional None fields are excluded from response due to response_model_exclude_none=True
         assert "is_mapped" not in t4
         assert "children" not in t4
+
+    def test_ti_summaries_batch_single_run(self, session, test_client):
+        """Test batch endpoint with single run (should use ~6 queries)."""
+        run_ids = ["run_1"]
+
+        with assert_queries_count(6):
+            response = test_client.post(
+                f"/grid/ti_summaries_batch/{DAG_ID}",
+                json=run_ids,
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["dag_id"] == DAG_ID
+        assert "summaries" in data
+        assert "run_1" in data["summaries"]
+        assert len(data["summaries"]["run_1"]) > 0
+
+    def test_ti_summaries_batch_multiple_runs(self, session, test_client):
+        """Test batch endpoint with multiple runs (should scale efficiently)."""
+        run_ids = ["run_1", "run_2"]
+
+        # Batch should not scale linearly - should be ~7-8 queries for 2 runs
+        # vs 8 queries (4 per run) if done separately
+        with assert_queries_count(7):
+            response = test_client.post(
+                f"/grid/ti_summaries_batch/{DAG_ID}",
+                json=run_ids,
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["dag_id"] == DAG_ID
+        assert len(data["summaries"]) == 2
+        assert "run_1" in data["summaries"]
+        assert "run_2" in data["summaries"]
+
+    def test_ti_summaries_batch_empty_runs(self, session, test_client):
+        """Test batch endpoint rejects empty run list."""
+        response = test_client.post(
+            f"/grid/ti_summaries_batch/{DAG_ID}",
+            json=[],
+        )
+
+        assert response.status_code == 400
+        assert "At least one run_id must be provided" in response.json()["detail"]
+
+    def test_ti_summaries_batch_max_limit(self, session, test_client):
+        """Test batch endpoint enforces maximum batch size."""
+        # Try to request more than MAX_BATCH_SIZE (50)
+        run_ids = [f"run_{i}" for i in range(51)]
+
+        response = test_client.post(
+            f"/grid/ti_summaries_batch/{DAG_ID}",
+            json=run_ids,
+        )
+
+        assert response.status_code == 400
+        assert "Batch size exceeds maximum" in response.json()["detail"]

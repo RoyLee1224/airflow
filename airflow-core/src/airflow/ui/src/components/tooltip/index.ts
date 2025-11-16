@@ -42,11 +42,3 @@ export type { ManualTooltipConfig, TooltipPlacement } from "./manualTooltipConfi
 // ========================================
 export { TooltipField } from "./TooltipField";
 export { TaskInstanceTooltipContent } from "./TaskInstanceTooltipContent";
-
-// ========================================
-// Specialized Wrappers
-// ========================================
-
-// ✨ Pre-configured wrappers (all-in-one, recommended)
-export { GridTaskInstanceTooltip } from "./GridTaskInstanceTooltip";
-export { TaskRecentRunsTooltip } from "./TaskRecentRunsTooltip";

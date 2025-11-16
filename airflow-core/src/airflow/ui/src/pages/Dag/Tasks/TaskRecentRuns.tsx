@@ -22,7 +22,7 @@ import duration from "dayjs/plugin/duration";
 import { Link } from "react-router-dom";
 
 import type { TaskInstanceResponse } from "openapi/requests/types.gen";
-import { TaskRecentRunsTooltip } from "src/components/tooltip";
+import { CustomTooltip, GRID_MANUAL_TOOLTIP_CONFIG, TaskInstanceTooltipContent } from "src/components/tooltip";
 import { getTaskInstanceLink } from "src/utils/links";
 
 dayjs.extend(duration);
@@ -52,7 +52,12 @@ export const TaskRecentRuns = ({
   return (
     <Flex alignItems="flex-end" flexDirection="row-reverse">
       {taskInstancesWithDuration.map((taskInstance) => (
-        <TaskRecentRunsTooltip key={taskInstance.dag_run_id} taskInstance={taskInstance}>
+        <CustomTooltip
+          config={GRID_MANUAL_TOOLTIP_CONFIG}
+          content={<TaskInstanceTooltipContent showRunId taskInstance={taskInstance} />}
+          delayMs={500}
+          key={taskInstance.dag_run_id}
+        >
           <Link to={getTaskInstanceLink(taskInstance)}>
             <Box p={1}>
               <Box
@@ -64,7 +69,7 @@ export const TaskRecentRuns = ({
               />
             </Box>
           </Link>
-        </TaskRecentRunsTooltip>
+        </CustomTooltip>
       ))}
     </Flex>
   );

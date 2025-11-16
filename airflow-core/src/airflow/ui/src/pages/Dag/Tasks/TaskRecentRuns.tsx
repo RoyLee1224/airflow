@@ -52,7 +52,12 @@ export const TaskRecentRuns = ({
   return (
     <Flex alignItems="flex-end" flexDirection="row-reverse">
       {taskInstancesWithDuration.map((taskInstance) => (
-        <TaskInstanceTooltip key={taskInstance.dag_run_id} showRunId taskInstance={taskInstance}>
+        <TaskInstanceTooltip
+          key={taskInstance.dag_run_id}
+          config={{ placement: "bottom-start" }}
+          showRunId
+          taskInstance={taskInstance}
+        >
           <Link to={getTaskInstanceLink(taskInstance)}>
             <Box p={1}>
               <Box

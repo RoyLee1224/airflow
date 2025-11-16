@@ -26,11 +26,12 @@ import type {
   TaskInstanceResponse,
 } from "openapi/requests/types.gen";
 import Time from "src/components/Time";
-import { BasicTooltip } from "src/components/tooltip";
+import { BasicTooltip, type ManualTooltipConfig } from "src/components/tooltip";
 import { renderDuration } from "src/utils";
 
 type Props = {
   readonly children: ReactElement;
+  readonly config?: ManualTooltipConfig;
   readonly customFields?: ReactNode;
   readonly showRunId?: boolean;
   readonly showTaskId?: boolean;
@@ -43,6 +44,7 @@ type Props = {
  */
 const TaskInstanceTooltip = ({
   children,
+  config,
   customFields,
   showRunId = true,
   showTaskId = false,
@@ -85,7 +87,7 @@ const TaskInstanceTooltip = ({
   );
 
   return (
-    <BasicTooltip content={content}>
+    <BasicTooltip config={config} content={content}>
       {children}
     </BasicTooltip>
   );

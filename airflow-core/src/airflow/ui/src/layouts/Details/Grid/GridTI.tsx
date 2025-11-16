@@ -29,26 +29,78 @@ import { Tooltip } from "src/components/ui";
 import { type HoverContextType, useHover } from "src/context/hover";
 import { buildTaskInstanceUrl } from "src/utils/links";
 
+// Ultra-optimized hover handlers using requestAnimationFrame
+// This batches DOM updates and prevents layout thrashing
+let rafId: number | null = null;
+let currentHoveredId: string | null = null;
+
 const handleMouseEnter =
-  (setHoveredTaskId: HoverContextType["setHoveredTaskId"]) => (event: MouseEvent<HTMLDivElement>) => {
-    const tasks = document.querySelectorAll<HTMLDivElement>(`#${event.currentTarget.id}`);
+  (setHoveredTaskId: HoverContextType["setHoveredTaskId"], taskId: string) =>
+  () => {
+    const normalizedId = taskId.replaceAll(".", "-");
 
-    tasks.forEach((task) => {
-      task.classList.add("grid-task-hovered");
+    // Cancel any pending animation frame
+    if (rafId !== null) {
+      cancelAnimationFrame(rafId);
+    }
+
+    // Skip if already hovering this task
+    if (currentHoveredId === normalizedId) {
+      return;
+    }
+
+    // Batch DOM updates in next animation frame
+    rafId = requestAnimationFrame(() => {
+      // Clear previous hover state
+      if (currentHoveredId) {
+        const prevTasks = document.querySelectorAll<HTMLDivElement>(
+          `[data-task-id="${currentHoveredId}"]`,
+        );
+
+        prevTasks.forEach((task) => {
+          task.classList.remove("grid-task-hovered");
+        });
+      }
+
+      // Set new hover state
+      const tasks = document.querySelectorAll<HTMLDivElement>(`[data-task-id="${normalizedId}"]`);
+
+      tasks.forEach((task) => {
+        task.classList.add("grid-task-hovered");
+      });
+
+      currentHoveredId = normalizedId;
+      setHoveredTaskId(taskId);
+      rafId = null;
     });
-
-    setHoveredTaskId(event.currentTarget.id.replaceAll("-", "."));
   };
 
-const handleMouseLeave = (taskId: string, setHoveredTaskId: HoverContextType["setHoveredTaskId"]) => () => {
-  const tasks = document.querySelectorAll<HTMLDivElement>(`#task-${taskId.replaceAll(".", "-")}`);
+const handleMouseLeave =
+  (setHoveredTaskId: HoverContextType["setHoveredTaskId"], taskId: string) => () => {
+    const normalizedId = taskId.replaceAll(".", "-");
 
-  tasks.forEach((task) => {
-    task.classList.remove("grid-task-hovered");
-  });
+    // Only clear if this is the currently hovered task
+    if (currentHoveredId !== normalizedId) {
+      return;
+    }
 
-  setHoveredTaskId(undefined);
-};
+    // Cancel any pending animation frame
+    if (rafId !== null) {
+      cancelAnimationFrame(rafId);
+    }
+
+    rafId = requestAnimationFrame(() => {
+      const tasks = document.querySelectorAll<HTMLDivElement>(`[data-task-id="${normalizedId}"]`);
+
+      tasks.forEach((task) => {
+        task.classList.remove("grid-task-hovered");
+      });
+
+      currentHoveredId = null;
+      setHoveredTaskId(undefined);
+      rafId = null;
+    });
+  };
 
 type Props = {
   readonly dagId: string;
@@ -69,8 +121,8 @@ const Instance = ({ dagId, instance, isGroup, isMapped, onClick, runId, taskId }
 
   const [searchParams] = useSearchParams();
 
-  const onMouseEnter = handleMouseEnter(setHoveredTaskId);
-  const onMouseLeave = handleMouseLeave(taskId, setHoveredTaskId);
+  const onMouseEnter = handleMouseEnter(setHoveredTaskId, taskId);
+  const onMouseLeave = handleMouseLeave(setHoveredTaskId, taskId);
 
   const getTaskUrl = useCallback(
     () =>
@@ -95,6 +147,7 @@ const Instance = ({ dagId, instance, isGroup, isMapped, onClick, runId, taskId }
     <Flex
       alignItems="center"
       bg={selectedTaskId === taskId || selectedGroupId === taskId ? "info.muted" : undefined}
+      data-task-id={taskId.replaceAll(".", "-")}
       height="20px"
       id={`task-${taskId.replaceAll(".", "-")}`}
       justifyContent="center"

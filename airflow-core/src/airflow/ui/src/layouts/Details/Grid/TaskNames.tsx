@@ -36,28 +36,74 @@ type Props = {
 
 const indent = (depth: number) => `${depth * 0.75 + 0.5}rem`;
 
-const onMouseEnter = (
-  event: MouseEvent<HTMLDivElement>,
-  nodeId: string,
-  setHoveredTaskId: HoverContextType["setHoveredTaskId"],
-) => {
-  const tasks = document.querySelectorAll<HTMLDivElement>(`#${event.currentTarget.id}`);
+// Ultra-optimized hover handlers using requestAnimationFrame
+// Shares state with GridTI for consistent hover behavior
+let rafIdTaskNames: number | null = null;
+let currentHoveredIdTaskNames: string | null = null;
 
-  tasks.forEach((task) => {
-    task.classList.add("grid-task-hovered");
+const onMouseEnter = (nodeId: string, setHoveredTaskId: HoverContextType["setHoveredTaskId"]) => {
+  const normalizedId = nodeId.replaceAll(".", "-");
+
+  // Cancel any pending animation frame
+  if (rafIdTaskNames !== null) {
+    cancelAnimationFrame(rafIdTaskNames);
+  }
+
+  // Skip if already hovering this task
+  if (currentHoveredIdTaskNames === normalizedId) {
+    return;
+  }
+
+  // Batch DOM updates in next animation frame
+  rafIdTaskNames = requestAnimationFrame(() => {
+    // Clear previous hover state
+    if (currentHoveredIdTaskNames) {
+      const prevTasks = document.querySelectorAll<HTMLDivElement>(
+        `[data-task-id="${currentHoveredIdTaskNames}"]`,
+      );
+
+      prevTasks.forEach((task) => {
+        task.classList.remove("grid-task-hovered");
+      });
+    }
+
+    // Set new hover state
+    const tasks = document.querySelectorAll<HTMLDivElement>(`[data-task-id="${normalizedId}"]`);
+
+    tasks.forEach((task) => {
+      task.classList.add("grid-task-hovered");
+    });
+
+    currentHoveredIdTaskNames = normalizedId;
+    setHoveredTaskId(nodeId);
+    rafIdTaskNames = null;
   });
-
-  setHoveredTaskId(nodeId);
 };
 
 const onMouseLeave = (nodeId: string, setHoveredTaskId: HoverContextType["setHoveredTaskId"]) => {
-  const tasks = document.querySelectorAll<HTMLDivElement>(`#task-${nodeId.replaceAll(".", "-")}`);
+  const normalizedId = nodeId.replaceAll(".", "-");
 
-  tasks.forEach((task) => {
-    task.classList.remove("grid-task-hovered");
+  // Only clear if this is the currently hovered task
+  if (currentHoveredIdTaskNames !== normalizedId) {
+    return;
+  }
+
+  // Cancel any pending animation frame
+  if (rafIdTaskNames !== null) {
+    cancelAnimationFrame(rafIdTaskNames);
+  }
+
+  rafIdTaskNames = requestAnimationFrame(() => {
+    const tasks = document.querySelectorAll<HTMLDivElement>(`[data-task-id="${normalizedId}"]`);
+
+    tasks.forEach((task) => {
+      task.classList.remove("grid-task-hovered");
+    });
+
+    currentHoveredIdTaskNames = null;
+    setHoveredTaskId(undefined);
+    rafIdTaskNames = null;
   });
-
-  setHoveredTaskId(undefined);
 };
 
 export const TaskNames = ({ nodes, onRowClick }: Props) => {
@@ -74,10 +120,11 @@ export const TaskNames = ({ nodes, onRowClick }: Props) => {
       borderColor={node.isGroup ? "border.emphasized" : "border"}
       borderTopWidth={index === 0 ? 1 : 0}
       cursor="pointer"
+      data-task-id={node.id.replaceAll(".", "-")}
       id={`task-${node.id.replaceAll(".", "-")}`}
       key={node.id}
       maxHeight="20px"
-      onMouseEnter={(event) => onMouseEnter(event, node.id, setHoveredTaskId)}
+      onMouseEnter={() => onMouseEnter(node.id, setHoveredTaskId)}
       onMouseLeave={() => onMouseLeave(node.id, setHoveredTaskId)}
       transition="background-color 0.2s"
     >

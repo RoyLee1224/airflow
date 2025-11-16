@@ -112,6 +112,7 @@ export const CalendarTooltip = ({
   return (
     <BasicTooltip
       config={{
+        placement: "bottom-start",
         containerStyle: {
           minWidth: "200px",
           whiteSpace: "nowrap",

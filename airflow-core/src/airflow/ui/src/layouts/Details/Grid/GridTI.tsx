@@ -23,7 +23,7 @@ import { Link, useLocation, useParams, useSearchParams } from "react-router-dom"
 
 import type { LightGridTaskInstanceSummary } from "openapi/requests/types.gen";
 import { StateIcon } from "src/components/StateIcon";
-import { CustomTooltip, GRID_MANUAL_TOOLTIP_CONFIG, TaskInstanceTooltipContent } from "src/components/tooltip";
+import TaskInstanceTooltip from "src/components/TaskInstanceTooltip";
 import { type HoverContextType, useHover } from "src/context/hover";
 import { buildTaskInstanceUrl } from "src/utils/links";
 
@@ -112,11 +112,7 @@ const Instance = ({ dagId, instance, isGroup, isMapped, onClick, runId, taskId }
           search: redirectionSearch,
         }}
       >
-        <CustomTooltip
-          config={GRID_MANUAL_TOOLTIP_CONFIG}
-          content={<TaskInstanceTooltipContent showRunId={false} showTaskId taskInstance={instance} />}
-          delayMs={500}
-        >
+        <TaskInstanceTooltip showRunId={false} showTaskId taskInstance={instance}>
           <Badge
             alignItems="center"
             borderRadius={4}
@@ -131,7 +127,7 @@ const Instance = ({ dagId, instance, isGroup, isMapped, onClick, runId, taskId }
           >
             <StateIcon size={10} state={instance.state} />
           </Badge>
-        </CustomTooltip>
+        </TaskInstanceTooltip>
       </Link>
     </Flex>
   );

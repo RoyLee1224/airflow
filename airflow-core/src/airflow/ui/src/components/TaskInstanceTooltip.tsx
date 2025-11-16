@@ -16,55 +16,81 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import type { ReactNode } from "react";
+import { Text, VStack } from "@chakra-ui/react";
+import type { ReactElement, ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 
 import type {
   LightGridTaskInstanceSummary,
   TaskInstanceHistoryResponse,
   TaskInstanceResponse,
 } from "openapi/requests/types.gen";
-import { TOOLTIP_DEFAULTS } from "src/components/tooltip";
-import { TaskInstanceTooltipContent } from "src/components/tooltip/TaskInstanceTooltipContent";
-import { Tooltip, type TooltipProps } from "src/components/ui";
+import Time from "src/components/Time";
+import { BasicTooltip, GRID_MANUAL_TOOLTIP_CONFIG } from "src/components/tooltip";
+import { renderDuration } from "src/utils";
 
 type Props = {
+  readonly children: ReactElement;
   readonly customFields?: ReactNode;
+  readonly delayMs?: number;
   readonly showRunId?: boolean;
   readonly showTaskId?: boolean;
-  readonly taskInstance?: LightGridTaskInstanceSummary | TaskInstanceHistoryResponse | TaskInstanceResponse;
-} & Omit<TooltipProps, "content">;
+  readonly taskInstance: LightGridTaskInstanceSummary | TaskInstanceHistoryResponse | TaskInstanceResponse;
+};
 
+/**
+ * Task instance tooltip with integrated content formatting
+ * Uses BasicTooltip for positioning and includes all formatting logic internally
+ */
 const TaskInstanceTooltip = ({
   children,
   customFields,
-  positioning,
+  delayMs = 500,
   showRunId = true,
   showTaskId = false,
   taskInstance,
-  ...rest
-}: Props) =>
-  taskInstance === undefined ? (
-    children
-  ) : (
-    <Tooltip
-      {...rest}
-      content={
-        <TaskInstanceTooltipContent
-          customFields={customFields}
-          showRunId={showRunId}
-          showTaskId={showTaskId}
-          taskInstance={taskInstance}
-        />
-      }
-      key={taskInstance.task_id}
-      portalled={TOOLTIP_DEFAULTS.portalled}
-      positioning={{
-        ...TOOLTIP_DEFAULTS.positioning,
-        ...positioning,
-      }}
-    >
-      {children}
-    </Tooltip>
+}: Props): ReactElement => {
+  const { t: translate } = useTranslation("common");
+
+  const TooltipField = ({ label, value }: { label: string; value: ReactNode }) => (
+    <Text fontSize="sm">
+      <Text as="span" fontWeight="medium">
+        {label}:
+      </Text>{" "}
+      {value}
+    </Text>
   );
+
+  const content = (
+    <VStack align="start" gap={1}>
+      {showTaskId && <TooltipField label={translate("taskId")} value={taskInstance.task_id} />}
+
+      <TooltipField label={translate("state")} value={taskInstance.state} />
+
+      {showRunId && "dag_run_id" in taskInstance ? (
+        <TooltipField label={translate("runId")} value={taskInstance.dag_run_id} />
+      ) : undefined}
+
+      {"start_date" in taskInstance ? (
+        <>
+          {taskInstance.try_number > 1 && (
+            <TooltipField label={translate("tryNumber")} value={taskInstance.try_number} />
+          )}
+          <TooltipField label={translate("startDate")} value={<Time datetime={taskInstance.start_date} />} />
+          <TooltipField label={translate("endDate")} value={<Time datetime={taskInstance.end_date} />} />
+          <TooltipField label={translate("duration")} value={renderDuration(taskInstance.duration)} />
+        </>
+      ) : undefined}
+
+      {customFields}
+    </VStack>
+  );
+
+  return (
+    <BasicTooltip config={GRID_MANUAL_TOOLTIP_CONFIG} content={content} delayMs={delayMs}>
+      {children}
+    </BasicTooltip>
+  );
+};
 
 export default TaskInstanceTooltip;

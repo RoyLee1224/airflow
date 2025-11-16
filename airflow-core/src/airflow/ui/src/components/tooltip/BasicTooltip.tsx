@@ -193,23 +193,23 @@ const getArrowStyle = (placement: TooltipPlacement, customArrowStyle?: CSSProper
 };
 
 /**
- * Complete tooltip solution with integrated hover management and manual positioning
+ * Basic tooltip with integrated hover management and manual positioning
  *
- * This component combines hover state management and manual positioning into
- * a single, easy-to-use component. No need for wrapper components or manual ref passing.
+ * This is the foundation component for all tooltips. Use specialized wrappers
+ * (TaskInstanceTooltip, CalendarTooltip) for common use cases.
  *
  * @example
  * ```tsx
- * <CustomTooltip
+ * <BasicTooltip
  *   delayMs={500}
  *   config={GRID_MANUAL_TOOLTIP_CONFIG}
- *   content={<TaskInstanceTooltipContent taskInstance={instance} />}
+ *   content={<div>Tooltip content</div>}
  * >
  *   <Badge>Task</Badge>
- * </CustomTooltip>
+ * </BasicTooltip>
  * ```
  */
-export const CustomTooltip = ({ children, config, content, delayMs = 500 }: Props): ReactElement => {
+export const BasicTooltip = ({ children, config, content, delayMs = 500 }: Props): ReactElement => {
   const triggerRef = useRef<HTMLElement>(null);
   const [isOpen, setIsOpen] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout>();

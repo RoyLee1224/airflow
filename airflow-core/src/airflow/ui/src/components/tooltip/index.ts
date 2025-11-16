@@ -23,11 +23,11 @@
 export { TOOLTIP_DEFAULTS, GRID_TOOLTIP_CONFIG } from "./config";
 
 // ========================================
-// Custom Tooltip - Base Component
+// Basic Tooltip - Base Component
 // ========================================
 
-// ✨ Integrated hover management + positioning (no wrapper needed!)
-export { CustomTooltip } from "./CustomTooltip";
+// ✨ Foundation component for all tooltips
+export { BasicTooltip } from "./BasicTooltip";
 
 // Configuration presets
 export {
@@ -36,9 +36,3 @@ export {
   CALENDAR_MANUAL_TOOLTIP_CONFIG,
 } from "./manualTooltipConfig";
 export type { ManualTooltipConfig, TooltipPlacement } from "./manualTooltipConfig";
-
-// ========================================
-// Content Components (Pure/Reusable)
-// ========================================
-export { TooltipField } from "./TooltipField";
-export { TaskInstanceTooltipContent } from "./TaskInstanceTooltipContent";

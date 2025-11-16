@@ -16,12 +16,23 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import type { ReactElement, ReactNode } from "react";
+import { Box, HStack, Text, VStack } from "@chakra-ui/react";
+import type { ReactElement } from "react";
+import { useTranslation } from "react-i18next";
 
-import { CALENDAR_MANUAL_TOOLTIP_CONFIG, CustomTooltip } from "src/components/tooltip";
+import { BasicTooltip, CALENDAR_MANUAL_TOOLTIP_CONFIG } from "src/components/tooltip";
 
-import { CalendarTooltipContent } from "./CalendarTooltipContent";
 import type { CalendarCellData, CalendarColorMode } from "./types";
+
+const SQUARE_SIZE = "12px";
+const SQUARE_BORDER_RADIUS = "2px";
+
+const stateColorMap = {
+  failed: "failed.solid",
+  planned: "stone.solid",
+  running: "running.solid",
+  success: "success.solid",
+};
 
 type Props = {
   readonly cellData: CalendarCellData | undefined;
@@ -31,16 +42,8 @@ type Props = {
 };
 
 /**
- * Simplified calendar cell tooltip using CustomTooltip
- *
- * No more HoverTooltip wrapper, no manual ref passing - just clean, simple usage
- *
- * @example
- * ```tsx
- * <CalendarTooltip cellData={cellData} viewMode="total">
- *   <Box width="14px" height="14px" />
- * </CalendarTooltip>
- * ```
+ * Calendar tooltip with integrated content formatting
+ * Uses BasicTooltip for positioning and includes all formatting logic internally
  */
 export const CalendarTooltip = ({
   cellData,
@@ -48,12 +51,68 @@ export const CalendarTooltip = ({
   delayMs = 500,
   viewMode = "total",
 }: Props): ReactElement => {
+  const { t: translate } = useTranslation(["dag", "common"]);
+
   if (!cellData) {
     return children;
   }
 
+  const { counts, date } = cellData;
+  const relevantCount = viewMode === "failed" ? counts.failed : counts.total;
+  const hasRuns = relevantCount > 0;
+
+  // In failed mode, only show failed runs; in total mode, show all non-zero states
+  const states = Object.entries(counts)
+    .filter(([key, value]) => {
+      if (key === "total") {
+        return false;
+      }
+      if (value === 0) {
+        return false;
+      }
+      if (viewMode === "failed") {
+        return key === "failed";
+      }
+
+      return true;
+    })
+    .map(([state, count]) => ({
+      color: stateColorMap[state as keyof typeof stateColorMap] || "gray.500",
+      count,
+      state: translate(`common:states.${state}`),
+    }));
+
+  const content = hasRuns ? (
+    <VStack align="start" gap={2}>
+      <Text fontSize="sm" fontWeight="medium">
+        {date}
+      </Text>
+      <VStack align="start" gap={1.5}>
+        {states.map(({ color, count, state }) => (
+          <HStack gap={3} key={state}>
+            <Box
+              bg={color}
+              border="1px solid"
+              borderColor="border.emphasized"
+              borderRadius={SQUARE_BORDER_RADIUS}
+              height={SQUARE_SIZE}
+              width={SQUARE_SIZE}
+            />
+            <Text fontSize="xs">
+              {count} {state}
+            </Text>
+          </HStack>
+        ))}
+      </VStack>
+    </VStack>
+  ) : (
+    <Text fontSize="sm">
+      {date}: {viewMode === "failed" ? translate("calendar.noFailedRuns") : translate("calendar.noRuns")}
+    </Text>
+  );
+
   return (
-    <CustomTooltip
+    <BasicTooltip
       config={{
         ...CALENDAR_MANUAL_TOOLTIP_CONFIG,
         containerStyle: {
@@ -61,10 +120,10 @@ export const CalendarTooltip = ({
           whiteSpace: "nowrap",
         },
       }}
-      content={<CalendarTooltipContent cellData={cellData} viewMode={viewMode} />}
+      content={content}
       delayMs={delayMs}
     >
       {children}
-    </CustomTooltip>
+    </BasicTooltip>
   );
 };

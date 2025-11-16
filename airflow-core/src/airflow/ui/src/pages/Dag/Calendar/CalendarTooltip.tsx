@@ -37,7 +37,6 @@ const stateColorMap = {
 type Props = {
   readonly cellData: CalendarCellData | undefined;
   readonly children: ReactElement;
-  readonly delayMs?: number;
   readonly viewMode?: CalendarColorMode;
 };
 
@@ -48,7 +47,6 @@ type Props = {
 export const CalendarTooltip = ({
   cellData,
   children,
-  delayMs = 500,
   viewMode = "total",
 }: Props): ReactElement => {
   const { t: translate } = useTranslation(["dag", "common"]);
@@ -120,7 +118,6 @@ export const CalendarTooltip = ({
         },
       }}
       content={content}
-      delayMs={delayMs}
     >
       {children}
     </BasicTooltip>

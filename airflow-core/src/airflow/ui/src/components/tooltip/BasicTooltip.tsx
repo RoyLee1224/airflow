@@ -77,12 +77,6 @@ type Props = {
    * Tooltip content
    */
   readonly content: ReactNode;
-
-  /**
-   * Delay in milliseconds before showing tooltip
-   * @default 500
-   */
-  readonly delayMs?: number;
 };
 
 /**
@@ -239,15 +233,12 @@ const getArrowStyle = (placement: TooltipPlacement, customArrowStyle?: CSSProper
  *
  * @example
  * ```tsx
- * <BasicTooltip
- *   delayMs={500}
- *   content={<div>Tooltip content</div>}
- * >
+ * <BasicTooltip content={<div>Tooltip content</div>}>
  *   <Badge>Task</Badge>
  * </BasicTooltip>
  * ```
  */
-export const BasicTooltip = ({ children, config, content, delayMs = 500 }: Props): ReactElement => {
+export const BasicTooltip = ({ children, config, content }: Props): ReactElement => {
   const triggerRef = useRef<HTMLElement>(null);
   const [isOpen, setIsOpen] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout>();
@@ -267,8 +258,8 @@ export const BasicTooltip = ({ children, config, content, delayMs = 500 }: Props
     }
     timeoutRef.current = setTimeout(() => {
       setIsOpen(true);
-    }, delayMs);
-  }, [delayMs]);
+    }, 500);
+  }, []);
 
   const handleMouseLeave = useCallback(() => {
     if (timeoutRef.current) {

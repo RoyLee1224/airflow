@@ -32,7 +32,6 @@ import { renderDuration } from "src/utils";
 type Props = {
   readonly children: ReactElement;
   readonly customFields?: ReactNode;
-  readonly delayMs?: number;
   readonly showRunId?: boolean;
   readonly showTaskId?: boolean;
   readonly taskInstance: LightGridTaskInstanceSummary | TaskInstanceHistoryResponse | TaskInstanceResponse;
@@ -45,7 +44,6 @@ type Props = {
 const TaskInstanceTooltip = ({
   children,
   customFields,
-  delayMs = 500,
   showRunId = true,
   showTaskId = false,
   taskInstance,
@@ -87,7 +85,7 @@ const TaskInstanceTooltip = ({
   );
 
   return (
-    <BasicTooltip content={content} delayMs={delayMs}>
+    <BasicTooltip content={content}>
       {children}
     </BasicTooltip>
   );

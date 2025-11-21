@@ -21,7 +21,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import type { GridRunsResponse } from "openapi/requests";
 import type { GridTask } from "src/layouts/Details/Grid/utils";
-import { buildTaskInstanceUrl } from "src/utils/links";
+import { buildDagRunUrl, buildTaskInstanceUrl } from "src/utils/links";
 
 import type {
   NavigationDirection,
@@ -75,7 +75,11 @@ const buildPath = (params: {
 
   switch (mode) {
     case "run":
-      return `/dags/${dagId}/runs/${run.run_id}`;
+      return buildDagRunUrl({
+        currentPathname: pathname,
+        dagId,
+        runId: run.run_id,
+      });
     case "task":
       return `/dags/${dagId}/tasks/${groupPath}${task.id}`;
     case "TI":

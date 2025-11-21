@@ -47,6 +47,24 @@ export const getRedirectPath = (targetPath: string): string => {
   return new URL(targetPath, baseUrl).pathname;
 };
 
+const runSubRoutes = ["required_actions", "asset_events", "events", "code", "details"];
+
+export const getDagRunAdditionalPath = (pathname: string): string => {
+  const runRegex = /\/runs\/[^/]+\/(?<subRoute>.+)$/u;
+  const runMatch = runRegex.exec(pathname);
+
+  if (runMatch?.groups?.subRoute !== undefined) {
+    const { subRoute } = runMatch.groups;
+
+    // Only preserve if it's a known dag run route or plugin route
+    if (runSubRoutes.includes(subRoute) || subRoute.startsWith("plugin/")) {
+      return `/${subRoute}`;
+    }
+  }
+
+  return "";
+};
+
 export const getTaskInstanceAdditionalPath = (pathname: string): string => {
   const subRoutes = taskInstanceRoutes.filter((route) => route.path !== undefined).map((route) => route.path);
   // Look for patterns like /tasks/{taskId}/mapped/{mapIndex}/{sub-route}
@@ -71,6 +89,15 @@ export const getTaskInstanceAdditionalPath = (pathname: string): string => {
   }
 
   return "";
+};
+
+export const buildDagRunUrl = (params: { currentPathname: string; dagId: string; runId: string }): string => {
+  const { currentPathname, dagId, runId } = params;
+  const additionalPath = getDagRunAdditionalPath(currentPathname);
+
+  const basePath = `/dags/${dagId}/runs/${runId}`;
+
+  return `${basePath}${additionalPath}`;
 };
 
 export const buildTaskInstanceUrl = (params: {

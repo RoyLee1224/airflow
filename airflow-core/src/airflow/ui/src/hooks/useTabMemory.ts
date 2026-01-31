@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLocalStorage } from "usehooks-ts";
 
@@ -43,50 +43,55 @@ type UseTabMemoryOptions = {
 export const useTabMemory = (options: UseTabMemoryOptions) => {
   const { currentPath, enabled = true, storageKey, tabs } = options;
   const navigate = useNavigate();
+  const defaultTab = tabs[0]?.value ?? "";
+  const [savedTab, setSavedTab] = useLocalStorage<string>(storageKey, defaultTab);
 
-  const normalizedPath = currentPath.replace(/\/$/u, "");
-  const segments = normalizedPath.split("/");
-  const lastSegment = segments[segments.length - 1] ?? "";
-  const isTabSegment = tabs.some((tab) => tab.value === lastSegment);
-  const baseUrl = isTabSegment && lastSegment !== "" ? segments.slice(0, -1).join("/") : normalizedPath;
-
-  // Use entity-based storage key instead of URL-based key
-  const [lastTab, setLastTab] = useLocalStorage<string>(storageKey, tabs[0]?.value ?? "");
+  // Track previous baseUrl to detect entity changes
+  const previousBaseUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!enabled || tabs.length === 0) {
       return;
     }
 
-    const normalizedCurrentPath = currentPath.replace(/\/$/u, "");
-    const normalizedBase = baseUrl.replace(/\/$/u, "");
+    const normalizedPath = currentPath.replace(/\/$/u, "");
+    const pathSegments = normalizedPath.split("/");
+    const lastSegment = pathSegments[pathSegments.length - 1] ?? "";
+    const isTabSegment = tabs.some((tab) => tab.value === lastSegment);
 
-    const pathSegments = normalizedCurrentPath.split("/");
-    const baseSegments = normalizedBase.split("/");
-    const currentTab = pathSegments[baseSegments.length] ?? "";
+    const baseUrl = isTabSegment && lastSegment !== "" ? pathSegments.slice(0, -1).join("/") : normalizedPath;
+    const currentTab = isTabSegment ? lastSegment : "";
 
-    const isValidTab = tabs.some((tab) => tab.value === currentTab);
-    const isLastTabInCurrentTabs = !lastTab || tabs.some((tab) => tab.value === lastTab);
+    const isAtBase = normalizedPath === baseUrl;
+    const isSavedTabValid = Boolean(savedTab) && tabs.some((tab) => tab.value === savedTab);
 
-    // Only update localStorage if both currentTab is valid AND lastTab is also in current tabs
-    // This prevents different page types (e.g., Task Instance vs Task Group) from overwriting each other's tab memory
-    if (isValidTab && isLastTabInCurrentTabs) {
-      setLastTab(currentTab);
+    // Check if we've switched to a different entity (different baseUrl)
+    const hasEntityChanged = previousBaseUrlRef.current !== null && previousBaseUrlRef.current !== baseUrl;
+    const isFirstVisit = previousBaseUrlRef.current === null;
+
+    previousBaseUrlRef.current = baseUrl;
+
+    // Check if current tab is valid (including empty string for default tab)
+    const isCurrentTabValid = tabs.some((tab) => tab.value === currentTab);
+
+    // Update saved preference when viewing a valid tab
+    if (isCurrentTabValid) {
+      const isPreviousSavedTabValid = !savedTab || tabs.some((tab) => tab.value === savedTab);
+
+      if (isPreviousSavedTabValid && currentTab !== savedTab) {
+        setSavedTab(currentTab);
+      }
     }
 
-    const isAtBaseUrl =
-      normalizedCurrentPath === normalizedBase || normalizedCurrentPath === `${normalizedBase}/`;
-    const hasValidSavedTab = Boolean(lastTab) && tabs.some((tab) => tab.value === lastTab);
-    const shouldRedirect = isAtBaseUrl && hasValidSavedTab && lastTab !== tabs[0]?.value;
+    const shouldRedirect =
+      isAtBase && isSavedTabValid && savedTab !== defaultTab && (isFirstVisit || hasEntityChanged);
 
     if (shouldRedirect) {
-      const redirectPath = lastTab ? `${normalizedBase}/${lastTab}` : normalizedBase;
-
       void Promise.resolve(
-        navigate(redirectPath, {
+        navigate(`${baseUrl}/${savedTab}`, {
           replace: true,
         }),
       );
     }
-  }, [baseUrl, currentPath, enabled, lastTab, navigate, setLastTab, tabs]);
+  }, [currentPath, defaultTab, enabled, navigate, savedTab, setSavedTab, tabs]);
 };

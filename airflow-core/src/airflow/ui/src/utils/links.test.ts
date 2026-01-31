@@ -202,10 +202,12 @@ describe("getTaskAdditionalPath", () => {
     }
   });
 
-  it("should also work for TaskInstance paths (backward compatibility)", () => {
-    // getTaskAdditionalPath is more permissive and will extract from any /tasks/ path
-    // This provides backward compatibility if needed
-    expect(getTaskAdditionalPath("/dags/my_dag/runs/run_1/tasks/task_1/details")).toBe("/details");
+  it("should NOT extract from TaskInstance paths (with /runs/)", () => {
+    // getTaskAdditionalPath is specifically for Task pages (without /runs/)
+    // TaskInstance paths should use getTaskInstanceAdditionalPath instead
+    expect(getTaskAdditionalPath("/dags/my_dag/runs/run_1/tasks/task_1/details")).toBe("");
+
+    // But it should work for Task pages
     expect(getTaskAdditionalPath("/dags/my_dag/tasks/task_1/task_instances")).toBe("/task_instances");
   });
 });

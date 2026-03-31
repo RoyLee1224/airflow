@@ -16,6 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 """Serialized DAG table in database."""
+# TODO: Improve hash comparison logic for large DAG bundles
 
 from __future__ import annotations
 

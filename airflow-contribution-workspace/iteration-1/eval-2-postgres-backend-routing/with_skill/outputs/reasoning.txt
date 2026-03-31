@@ -1,0 +1,39 @@
+The user wants to validate a DAG serialization change by running the test file
+airflow-core/tests/unit/models/test_serialized_dag.py, which is marked with
+@pytest.mark.backend("postgres").
+
+Following the skill workflow:
+
+1. Identify the test file: airflow-core/tests/unit/models/test_serialized_dag.py
+   in the airflow-core package.
+
+2. Inspect markers: The test requires the postgres backend
+   (@pytest.mark.backend("postgres")). This is a DB test that specifically needs
+   a Postgres database.
+
+3. Choose the narrowest matching command: The skill says to prefer host-side uv
+   commands when the docs indicate the test can run locally (step 4), but to
+   switch to Breeze when the docs require additional services or specific
+   backends (step 5). A postgres backend requirement means a running Postgres
+   database is needed, which Breeze provides automatically.
+
+4. The contributing docs (contributing-docs/testing/unit_tests.rst) confirm that
+   tests marked with backend("postgres") require a Postgres database, and the
+   recommended approach is to use Breeze with the --backend postgres flag. The
+   targeted Breeze command from the skill reference table is:
+   "breeze run pytest <tests> -xvs" -- used when uv fails because of missing
+   system libraries or services. A Postgres database is exactly such a service.
+
+5. The --backend postgres flag tells Breeze to start a Postgres container and
+   configure the test environment to use it. Without this flag, Breeze defaults
+   to sqlite, which would cause the backend("postgres")-marked tests to be
+   skipped or fail.
+
+Therefore the correct command is:
+  breeze run pytest airflow-core/tests/unit/models/test_serialized_dag.py -xvs --backend postgres
+
+This uses Breeze (not uv run) because:
+- The test requires a Postgres database service
+- uv run on the host cannot provide a Postgres backend
+- Breeze automatically provisions the required database container
+- The --backend postgres flag ensures the correct database is used

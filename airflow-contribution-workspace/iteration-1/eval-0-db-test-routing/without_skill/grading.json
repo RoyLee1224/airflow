@@ -1,0 +1,22 @@
+{
+  "eval_id": 0,
+  "eval_name": "db-test-routing",
+  "run_type": "without_skill",
+  "expectations": [
+    {
+      "text": "uses_uv_not_breeze",
+      "passed": false,
+      "evidence": "Command is 'breeze run pytest ...' — incorrectly uses breeze instead of uv"
+    },
+    {
+      "text": "correct_project_flag",
+      "passed": false,
+      "evidence": "Command does not include '--project airflow-core' since it uses breeze"
+    },
+    {
+      "text": "includes_xvs_flags",
+      "passed": true,
+      "evidence": "Command includes '-xvs'"
+    }
+  ]
+}

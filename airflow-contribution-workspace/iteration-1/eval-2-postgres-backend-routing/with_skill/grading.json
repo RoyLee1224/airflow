@@ -1,0 +1,22 @@
+{
+  "eval_id": 2,
+  "eval_name": "postgres-backend-routing",
+  "run_type": "with_skill",
+  "expectations": [
+    {
+      "text": "uses_breeze_with_backend",
+      "passed": true,
+      "evidence": "Command is 'breeze run pytest ... --backend postgres'"
+    },
+    {
+      "text": "specifies_postgres_backend",
+      "passed": true,
+      "evidence": "Command includes '--backend postgres'"
+    },
+    {
+      "text": "does_not_use_uv",
+      "passed": true,
+      "evidence": "Command uses breeze, not uv"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "eval_id": 0,
+  "eval_name": "db-test-routing",
+  "prompt": "Run the serialized_dag tests. The file is marked with @pytest.mark.db_test.",
+  "assertions": [
+    {
+      "name": "uses_uv_not_breeze",
+      "type": "output_contains",
+      "criterion": "The command uses 'uv run --project' to run the test, not 'breeze run pytest'"
+    },
+    {
+      "name": "correct_project_flag",
+      "type": "output_contains",
+      "criterion": "The command includes '--project airflow-core'"
+    },
+    {
+      "name": "includes_xvs_flags",
+      "type": "output_contains",
+      "criterion": "The command includes '-xvs' flags"
+    }
+  ]
+}

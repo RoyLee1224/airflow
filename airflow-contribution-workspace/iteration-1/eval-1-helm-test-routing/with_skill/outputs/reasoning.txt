@@ -1,0 +1,13 @@
+The user tweaked the scheduler Helm template and wants to run chart/tests/test_scheduler.py.
+
+1. File location: The actual test file is at helm-tests/tests/helm_tests/airflow_core/test_scheduler.py (the user referenced it as chart/tests/test_scheduler.py, which is a common shorthand).
+
+2. Following the skill workflow:
+   - Step 1: The changed files are in the Helm chart area (chart/ templates) and the relevant test is a Helm test.
+   - Step 2: Inspecting the test file, it imports from chart_utils.helm_template_generator and uses pytest parametrize markers. No db_test, backend, integration, system, or platform markers are present.
+   - Step 3: Prefer the narrowest command that matches. The skill's "Breeze suite commands" table has a specific entry for Helm tests: "breeze testing helm-tests --use-xdist" with the note "Use for chart and Helm-related changes."
+   - Steps 4-5: Helm tests cannot run via host uv commands because they require Breeze (Helm/chart rendering infrastructure). The skill routes Helm tests to Breeze, not to host-side uv pytest.
+
+3. Why not a targeted uv pytest command? Helm tests are not part of a standard uv --project workspace. They require the Breeze environment which provides the Helm binary, chart rendering utilities, and the proper test infrastructure. The skill's command reference explicitly lists "breeze testing helm-tests --use-xdist" as the command for chart and Helm-related changes.
+
+4. Why the full helm-tests suite rather than a single file? The skill's Breeze suite commands table provides "breeze testing helm-tests --use-xdist" as the standard command for Helm changes. While one could potentially narrow down with "breeze testing helm-tests --use-xdist --test-type airflow_core" (since the test is under airflow_core/), the default command with --use-xdist runs all Helm tests in parallel efficiently, which is the documented approach for chart changes.

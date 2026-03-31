@@ -1,0 +1,17 @@
+{
+  "eval_id": 1,
+  "eval_name": "helm-test-routing",
+  "prompt": "I just tweaked the scheduler Helm template. Run chart/tests/test_scheduler.py.",
+  "assertions": [
+    {
+      "name": "uses_breeze_helm",
+      "type": "output_contains",
+      "criterion": "The command uses 'breeze testing helm-tests' to run Helm tests"
+    },
+    {
+      "name": "does_not_use_uv",
+      "type": "output_not_contains",
+      "criterion": "The command does NOT use 'uv run' or 'uv run pytest' for Helm tests"
+    }
+  ]
+}

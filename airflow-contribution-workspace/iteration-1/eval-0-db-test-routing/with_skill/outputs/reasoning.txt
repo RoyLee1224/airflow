@@ -1,0 +1,26 @@
+1. Identified the test file: airflow-core/tests/unit/models/test_serialized_dag.py
+
+2. Inspected markers: The file has a module-level `pytestmark = pytest.mark.db_test` at line 59,
+   confirming it is a database test. There is also an additional `@pytest.mark.db_test` on a
+   specific test at line 252 (redundant with the module marker).
+
+3. The skill workflow (step 2) says to inspect for markers like `db_test`, `backend`,
+   `integration`, `system`, `platform`, and `need_serialized_dag`. The only relevant marker
+   found is `db_test`.
+
+4. The skill workflow (steps 3-4) says to prefer the narrowest command that matches the change
+   and to use host uv-based commands when the docs indicate the test can run locally.
+
+5. The `db_test` marker means the test requires database access. The default backend is SQLite,
+   which is available on the host without additional services. The skill's targeted test
+   commands table shows that `uv run --project <PROJECT> pytest path/to/test.py -xvs` is the
+   appropriate command for running a single test file on the host.
+
+6. Since the test only requires the default SQLite backend (no `backend` marker specifying
+   postgres or mysql, no `integration` or `system` markers requiring external services), the
+   host-side uv command is sufficient. There is no need to fall back to Breeze.
+
+7. The project is `airflow-core` since the test lives under airflow-core/tests/.
+
+Therefore the command is:
+  uv run --project airflow-core pytest airflow-core/tests/unit/models/test_serialized_dag.py -xvs

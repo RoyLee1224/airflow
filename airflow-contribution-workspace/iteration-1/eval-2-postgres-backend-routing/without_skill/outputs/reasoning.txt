@@ -1,0 +1,27 @@
+The user wants to validate a DAG serialization change locally. The relevant test file is:
+
+  airflow-core/tests/unit/models/test_serialized_dag.py
+
+This file has `pytestmark = pytest.mark.db_test`, meaning it requires database access.
+The user stated the test is marked with `@pytest.mark.backend("postgres")`, which means
+it specifically requires a PostgreSQL backend to run.
+
+Key decisions:
+
+1. Use `breeze` instead of `uv run`: Per CLAUDE.md, we should never run pytest directly
+   on the host. Breeze provides the containerized environment with all system dependencies.
+   Additionally, a postgres backend requires a running PostgreSQL instance, which breeze
+   manages automatically when `--backend postgres` is specified.
+
+2. `--backend postgres`: The `@pytest.mark.backend("postgres")` marker means the test will
+   be skipped unless the test environment is running against a PostgreSQL database. By default,
+   breeze uses SQLite, so we must explicitly pass `--backend postgres` to spin up and connect
+   to a PostgreSQL instance.
+
+3. `-xvs` flags: Standard pytest flags for local validation — stop on first failure (-x),
+   verbose output (-v), and no output capture (-s) so print statements and logs are visible.
+
+4. Test path: Inside the breeze container, the repo is mounted at /opt/airflow/, and breeze
+   automatically maps `tests/...` paths relative to the airflow-core package. The path
+   `tests/unit/models/test_serialized_dag.py` is used because breeze resolves it within the
+   airflow-core test directory.

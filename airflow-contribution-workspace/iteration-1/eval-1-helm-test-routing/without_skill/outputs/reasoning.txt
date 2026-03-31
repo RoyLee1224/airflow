@@ -1,0 +1,19 @@
+The user wants to run chart/tests/test_scheduler.py, but that path does not exist in the repo. The actual Helm test for the scheduler lives at:
+
+  helm-tests/tests/helm_tests/airflow_core/test_scheduler.py
+
+Per CLAUDE.md, Helm tests are executed via Breeze:
+
+  - "Run Helm tests in parallel with xdist": breeze testing helm-tests --use-xdist
+  - "Run specific Helm test type": breeze testing helm-tests --use-xdist --test-type <type>
+    (types include: airflow_aux, airflow_core, apiserver, dagprocessor, other, redis, security, statsd, webserver)
+
+Since test_scheduler.py is located under the airflow_core directory within helm-tests, the appropriate test type is "airflow_core". This runs all airflow_core Helm tests including the scheduler test.
+
+The command chosen is:
+
+  breeze testing helm-tests --test-type airflow_core
+
+This targets the airflow_core test group which contains test_scheduler.py. Using --test-type narrows the scope to only the relevant subset of Helm tests rather than running the entire Helm test suite. I did not add --use-xdist since this is a focused test run for a single test type, though adding it would also be valid for parallelism.
+
+Note: The user referenced "chart/tests/test_scheduler.py" which is not the actual file path. The real path is "helm-tests/tests/helm_tests/airflow_core/test_scheduler.py". The Helm chart templates live under chart/templates/ but the tests for them live under helm-tests/.

@@ -1,0 +1,22 @@
+{
+  "eval_id": 2,
+  "eval_name": "postgres-backend-routing",
+  "prompt": "I want to validate my DAG serialization change locally, nothing fancy. The test file is marked with @pytest.mark.backend(\"postgres\"); just run it quickly.",
+  "assertions": [
+    {
+      "name": "uses_breeze_with_backend",
+      "type": "output_contains",
+      "criterion": "The command uses 'breeze' to run the test (not 'uv run')"
+    },
+    {
+      "name": "specifies_postgres_backend",
+      "type": "output_contains",
+      "criterion": "The command includes '--backend postgres'"
+    },
+    {
+      "name": "does_not_use_uv",
+      "type": "output_not_contains",
+      "criterion": "The command does NOT use 'uv run --project' for a postgres-backend test"
+    }
+  ]
+}

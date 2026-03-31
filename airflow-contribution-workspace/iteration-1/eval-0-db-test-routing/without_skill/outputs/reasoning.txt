@@ -1,0 +1,23 @@
+1. Located the test file at: airflow-core/tests/unit/models/test_serialized_dag.py
+
+2. Confirmed the file is marked with `pytestmark = pytest.mark.db_test` at line 59 (module-level),
+   meaning the entire file requires database access.
+
+3. The file is in the `airflow-core` project (pyproject.toml is in the airflow-core/ directory).
+
+4. Since the tests require database access (db_test marker), they need a running database backend.
+   The CLAUDE.md instructions state: "Never run pytest, python, or airflow commands directly on
+   the host — always use breeze." Breeze provides the necessary database infrastructure (SQLite
+   by default, or Postgres/MySQL with --backend flag).
+
+5. The standard command pattern from CLAUDE.md for running tests is:
+   - Direct: `uv run --project <PROJECT> pytest path/to/test.py -xvs`
+   - Via Breeze: `breeze run pytest <tests> -xvs`
+
+   For db_test marked tests, using `breeze run pytest` ensures the database is properly
+   provisioned and available. While `uv run --project airflow-core pytest` might work for
+   simple SQLite-backed tests, the CLAUDE.md guidance is to use breeze for running tests,
+   especially those requiring system dependencies like databases.
+
+6. The `-xvs` flags provide: -x (stop on first failure), -v (verbose output), -s (no capture,
+   show print statements).

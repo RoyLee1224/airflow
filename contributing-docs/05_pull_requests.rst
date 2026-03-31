@@ -185,6 +185,27 @@ tooling, with a comment explaining what needs to be fixed.
 5. **Coherent changes** — The PR should contain related changes only. Completely unrelated
    changes bundled together will be flagged.
 
+.. AGENT-SKILL-START
+   type: command-group
+   skill: airflow-contribution
+   category: change-scoping
+   title: Change-scoped validation
+   order: 40
+   intro: >
+     Use these commands to scope validation to the current change before
+     deciding which tests or checks to run.
+   commands:
+     - task: Determine affected test suites from a squashed change
+       command: breeze selective-checks --commit-ref <commit_sha>
+       notes: Use after identifying the commit or squashed diff to scope CI-like validation.
+     - task: Run the standard fast static gate before pushing
+       command: prek run --from-ref <target_branch> --stage pre-commit
+       notes: Required local quality gate before opening or updating a PR.
+     - task: Run the slower manual gate before pushing
+       command: prek run --from-ref <target_branch> --stage manual
+       notes: Broader local validation expected before sending for review.
+.. AGENT-SKILL-END
+
 **What happens when a PR is converted to draft?**
 
 -  The comment informs you what you need to do.

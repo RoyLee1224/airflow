@@ -168,6 +168,7 @@ repos:
           ^(?:.*/)?AGENTS\.md$|
           ^(?:.*/)?CLAUDE\.md$|
           ^(?:.*/)?SKILL\.md$|
+          ^(?:.*/)?SKILL\.template\.md$|
           ^scripts/ci/license-templates/
       - id: insert-license
         name: Add short license for agentic Markdown files
@@ -183,12 +184,14 @@ repos:
           ^\.claude/|
           ^(?:.*/)?AGENTS\.md$|
           ^(?:.*/)?CLAUDE\.md$|
-          ^(?:.*/)?SKILL\.md$
+          ^(?:.*/)?SKILL\.md$|
+          ^(?:.*/)?SKILL\.template\.md$
         exclude:
           (?x)
           ^scripts/ci/license-templates/|
           ^\.github/instructions/|
-          ^\.github/skills/airflow-translations/SKILL\.md$
+          ^\.github/skills/airflow-translations/SKILL\.md$|
+          ^\.agents/skills/airflow-contribution/SKILL\.md$
       - id: insert-license
         name: Add license for all other files
         args:
@@ -805,6 +808,17 @@ repos:
           (?x)
           ^airflow-core/src/airflow/ui/public/i18n/locales/en/.*\.json$|
           ^\.github/skills/airflow-translations/SKILL\.md$
+        pass_filenames: false
+      - id: generate-agent-skills
+        name: Generate agent skills from contributing docs
+        entry: ./scripts/ci/prek/generate_skills.py
+        language: python
+        files: >
+          (?x)
+          ^contributing-docs/.*\.rst$|
+          ^\.agents/skills/.*/SKILL\.template\.md$|
+          ^\.agents/skills/.*/SKILL\.md$|
+          ^scripts/ci/prek/generate_skills\.py$
         pass_filenames: false
       - id: update-pyproject-toml
         name: Update Airflow's meta-package pyproject.toml

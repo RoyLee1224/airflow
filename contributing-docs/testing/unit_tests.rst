@@ -218,6 +218,35 @@ rerun in Breeze as needed (``-n auto`` will parallelize tests using the ``pytest
     breeze shell --backend none --python 3.10
     > pytest airflow-core/tests --skip-db-tests -n auto
 
+.. AGENT-SKILL-START
+   type: command-group
+   skill: airflow-contribution
+   category: targeted-tests
+   title: Targeted test commands
+   order: 20
+   intro: >
+     Prefer these commands when iterating on a specific test, file, or package.
+     Use host-side uv commands when the target can run locally, and fall back
+     to Breeze if local execution is blocked by system dependencies or required
+     services.
+   commands:
+     - task: Run a single test method or case
+       command: uv run --project <PROJECT> pytest path/to/test.py::TestClass::test_method -xvs
+       notes: Use for the narrowest host-side iteration loop.
+     - task: Run a single test file
+       command: uv run --project <PROJECT> pytest path/to/test.py -xvs
+       notes: Use when the whole file is the smallest useful validation unit.
+     - task: Run all tests in a package or folder
+       command: uv run --project <PROJECT> pytest path/to/package -xvs
+       notes: Use when a change spans a small package or mirrored test folder.
+     - task: Retry a targeted run in Breeze
+       command: breeze run pytest <tests> -xvs
+       notes: Use when uv fails because of missing system libraries or services.
+     - task: Run scripts tests
+       command: uv run --project scripts pytest scripts/tests/ -xvs
+       notes: Use for changes under scripts/ and scripts/tests/.
+.. AGENT-SKILL-END
+
 Airflow DB tests
 ................
 
@@ -277,6 +306,42 @@ As explained before, you cannot run DB tests in parallel using the ``pytest-xdis
 .. code-block:: bash
 
     breeze testing core-tests --run-db-tests-only --backend postgres --python 3.10 --run-in-parallel
+
+.. AGENT-SKILL-START
+   type: command-group
+   skill: airflow-contribution
+   category: suite-tests
+   title: Breeze suite commands
+   order: 30
+   intro: >
+     Use these Breeze orchestrated commands for parallel or environment-heavy
+     test runs that go beyond a single targeted host-side pytest invocation.
+   commands:
+     - task: Run all core tests in parallel
+       command: breeze testing core-tests --run-in-parallel
+       notes: Use for broad core validation.
+     - task: Run only core DB tests in parallel
+       command: breeze testing core-tests --run-db-tests-only --run-in-parallel
+       notes: Use when the change affects DB-backed core behavior.
+     - task: Run only core non-DB tests with xdist
+       command: breeze testing core-tests --skip-db-tests --use-xdist
+       notes: Use for broader non-DB core validation.
+     - task: Run all provider tests in parallel
+       command: breeze testing providers-tests --run-in-parallel
+       notes: Use for provider-wide changes or provider CI parity.
+     - task: Run a single provider suite
+       command: breeze testing providers-tests --test-type "Providers[<name>]"
+       notes: Use when a change is limited to one provider package.
+     - task: Run Helm tests
+       command: breeze testing helm-tests --use-xdist
+       notes: Use for chart and Helm-related changes.
+     - task: Run Task SDK tests
+       command: breeze testing task-sdk-tests
+       notes: Use for task-sdk scoped validation.
+     - task: Run airflow-ctl tests
+       command: breeze testing airflow-ctl-tests
+       notes: Use for airflow-ctl changes.
+.. AGENT-SKILL-END
 
 Examples of marking test as DB test
 ...................................

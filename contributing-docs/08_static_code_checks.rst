@@ -225,6 +225,43 @@ You can always skip running the tests by providing ``--no-verify`` flag to the
 
 To check other usage types of the pre-commit framework, see `Pre-commit website <https://pre-commit.com/>`__.
 
+.. AGENT-SKILL-START
+   type: command-group
+   skill: airflow-contribution
+   category: static-checks
+   title: Static checks (host only)
+   order: 10
+   intro: >
+     These commands are kept in the contributing docs and synced into the
+     airflow-contribution skill. Use them for host-side validation before
+     broader test execution.
+   commands:
+     - task: Install prek
+       command: uv tool install prek
+       notes: Bootstrap the local static-check tooling.
+     - task: Enable commit hooks
+       command: prek install
+       notes: Install local hooks before using the regular contributor flow.
+     - task: Run ruff lint from the target branch
+       command: prek run ruff --from-ref <target_branch>
+       notes: Targeted lint pass for changed files.
+     - task: Run ruff format from the target branch
+       command: prek run ruff-format --from-ref <target_branch>
+       notes: Targeted formatting pass for changed files.
+     - task: Run regular fast static checks
+       command: prek run --from-ref <target_branch> --stage pre-commit
+       notes: Standard fast validation before pushing a PR.
+     - task: Run slower manual static checks
+       command: prek run --from-ref <target_branch> --stage manual
+       notes: Broader validation used before pushing or when requested.
+     - task: Format a single Python file
+       command: uv run ruff format <file>
+       notes: Apply formatting directly to a modified Python file.
+     - task: Fix lint issues in a single Python file
+       command: uv run ruff check --fix <file>
+       notes: Run immediately after formatting a modified Python file.
+.. AGENT-SKILL-END
+
 Disabling particular checks
 ---------------------------
 

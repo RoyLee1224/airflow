@@ -1,0 +1,51 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+---
+# Diagnosis case built from apache/airflow#39801: a task with the
+# none_failed_min_one_success trigger rule inside a mapped task group is
+# skipped before the group expands. The prompt states only the observable
+# symptom (downstream tasks never ran) — never the mechanism, so the arms
+# must find it themselves: the with_mcp arm by observing the frozen run,
+# the no_mcp arm by static reasoning over the Dag and scheduler source.
+#
+# The Dag/run/file names are deliberately neutral (no issue number) and the
+# agent works in a worktree without dev/skill-evals — this file and the
+# fixture docstring would otherwise leak the expected answer to both arms.
+
+- description: "Diagnose #39801: a_end skipped before mapped group expansion"
+  vars:
+    request: |
+      In the local Airflow dev instance (the Breeze environment this repo is
+      checked out in), the Dag `media_asset_pipeline` has a finished run
+      with run_id `frozen_debug_run`. The run ended without any task
+      failing, yet `mark_item_as_done` and `end` never actually executed.
+      The deployed Dag source is at files/dags/media_asset_pipeline.py.
+
+      Investigate what happened in that run and why. Report:
+      - culprit_task_id: the task whose recorded outcome in this run is
+        wrong — the first task whose state should have been different,
+        from which the rest of the cascade follows (not the task that
+        caused it to end up that way)
+      - root_cause: why it ended up in that state
+      - evidence: the concrete observations or code you based this on
+  assert:
+    - type: javascript
+      value: 'output.culprit_task_id.includes("a_end")'
+    - type: javascript
+      value: '/trigger[_ ]?rule|none_failed_min_one_success/i.test(output.root_cause)'
+    - type: javascript
+      value: '/expan|mapped|mapping|dynamic/i.test(output.root_cause)'

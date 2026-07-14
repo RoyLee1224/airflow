@@ -28,6 +28,11 @@
   - [Adding cases](#adding-cases)
   - [How it works](#how-it-works)
   - [Eval-run hash gate](#eval-run-hash-gate)
+- [MCP-usefulness eval](#mcp-usefulness-eval)
+  - [Prerequisites](#prerequisites-1)
+  - [Running](#running)
+  - [Reading the results](#reading-the-results)
+  - [Scope](#scope)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -149,3 +154,98 @@ updated hash file together with your change.
   cases, so a hash over them would prove nothing. Extend
   `compute_guidance_hash` in `scripts/ci/prek/check_eval_hash.py` when
   per-skill cases land.
+
+# MCP-usefulness eval
+
+`eval_mcp.py` answers a different question with the same machinery:
+**does giving the agent runtime observation via MCP tools measurably
+improve its diagnosis of a live Airflow problem?** It A/B-tests two
+arms that differ only in tool access:
+
+- `with_mcp` — read-only file tools **plus** the Airflow dev MCP
+  server's tools (runtime observation).
+- `no_mcp` — read-only file tools only (static reasoning).
+
+Neither arm gets Bash, so the no-MCP arm cannot reach the API
+out-of-band — the only variable is MCP tool access. Both arms observe
+the same **frozen known-bad state**: a Dag run reproducing
+[#39801](https://github.com/apache/airflow/issues/39801) (a task with
+the `none_failed_min_one_success` trigger rule skipped before its
+mapped task group expands), prepared once per Breeze session and then
+only read.
+
+To keep the experiment honest, the arms work in a **clean worktree**
+(repo at HEAD with `dev/skill-evals/` removed — the case asserts and
+fixture provenance would leak the expected answer to any arm that can
+Grep the checkout), and the fixture uses deliberately **neutral names**
+(`media_asset_pipeline`, `frozen_debug_run` — no issue number a model
+could recognise from training data). The deployed Dag sits at
+`files/dags/media_asset_pipeline.py` in the worktree, the same path it
+occupies in the live Breeze instance.
+
+This suite is manual-only and independent of the AGENTS.md hash gate —
+it needs a live Airflow, so it never runs in CI and never touches
+`last-eval-hash.txt`.
+
+## Prerequisites
+
+1. **A running Breeze Airflow** — `breeze start-airflow` (API on
+   `localhost:28080`).
+2. **An Airflow dev MCP server**, strictly read-only, reachable at
+   `$AIRFLOW_MCP_URL` (default `http://localhost:28081/mcp`). Until
+   [PR #69381](https://github.com/apache/airflow/pull/69381) merges,
+   run it from that branch:
+
+   ```bash
+   AIRFLOW_MCP_ALLOW_WRITES=false \
+     uvx --from 'git+https://github.com/shahar1/airflow@dev-internal-mcp-server#subdirectory=dev/mcp_server' \
+     airflow-dev-mcp --transport http --port 28081
+   ```
+
+   Keep writes disabled — the eval relies on the frozen fixture state
+   staying untouched (the harness also deny-lists the write tools
+   client-side, as belt and suspenders).
+3. **The frozen fixture** — copies the fixture Dag into `files/dags/`,
+   triggers one run with a fixed `run_id`, and verifies the buggy
+   outcome is present:
+
+   ```bash
+   ./dev/skill-evals/mcp/prepare_fixture.py
+   ```
+
+4. Authentication, as for the main harness (Claude Code session or
+   `ANTHROPIC_API_KEY`).
+
+## Running
+
+```bash
+# Stage your changes first — prek stashes unstaged edits:
+EVAL_REPEAT=8 prek run run-skill-eval-mcp --hook-stage manual --all-files
+```
+
+Agentic debugging is high-variance — use a much larger `EVAL_REPEAT`
+than the classification cases need (8–10 rather than 3) and read
+medians, not single runs. `EVAL_MCP_MAX_TURNS` (default 30) bounds a
+wandering agent; it applies to both arms equally.
+
+## Reading the results
+
+The run prints a per-arm table — pass rate plus median turns, seconds,
+and tokens — and writes the full report to
+`files/skill-evals/mcp-results.json`. The interesting comparisons:
+
+- **pass rate** — did runtime observation change *whether* the agent
+  found the root cause?
+- **median turns / seconds** — did it shorten the *path* to it?
+
+A case passes when the structured diagnosis names the culprit task and
+the root cause mentions both the trigger rule and the pre-expansion
+mechanism (see the asserts in `mcp/cases/diagnose_39801.yaml`).
+
+## Scope
+
+This suite measures **usefulness** (does a tool/prompt change agent
+behaviour?), not **safety** (secret redaction, RBAC, rate limiting) —
+safety belongs to contract/unit tests, not behavioural A/B. Cases
+state only the observable symptom, never the mechanism, so the arms
+must find the cause themselves.

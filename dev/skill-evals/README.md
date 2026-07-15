@@ -174,13 +174,19 @@ the `none_failed_min_one_success` trigger rule skipped before its
 mapped task group expands), prepared once per Breeze session and then
 only read.
 
-To keep the experiment honest, the arms work in a **clean worktree**
-(repo at HEAD with `dev/skill-evals/` removed — the case asserts and
-fixture provenance would leak the expected answer to any arm that can
-Grep the checkout), and the fixture uses deliberately **neutral names**
-(`media_asset_pipeline`, `frozen_debug_run` — no issue number a model
-could recognise from training data). The deployed Dag sits at
-`files/dags/media_asset_pipeline.py` in the worktree, the same path it
+To keep the experiment honest, the arms work in a **clean snapshot**
+(a `git archive` export of HEAD — no `.git`, so deleted answer files
+cannot be recovered with `git show` — with `dev/skill-evals/` removed,
+because the case asserts and fixture provenance would leak the expected
+answer to any arm that can search the checkout). Escape tools (Bash,
+subagents, web access, writes) are **explicitly denied** in both arms:
+a plain "not allowed" is not enough, since the developer's own
+`settings.local.json` allowlist leaks into the session and once
+approved a `breeze run airflow ...` call from the no-MCP arm. The
+fixture uses deliberately **neutral names** (`media_asset_pipeline`,
+`frozen_debug_run` — no issue number a model could recognise from
+training data), and the deployed Dag sits at
+`files/dags/media_asset_pipeline.py` in the snapshot, the same path it
 occupies in the live Breeze instance.
 
 This suite is manual-only and independent of the AGENTS.md hash gate —

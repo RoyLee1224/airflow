@@ -27,11 +27,12 @@ access:
   (runtime observation of the live Breeze instance).
 - ``no_mcp``  — read-only file tools only (static reasoning over the repo).
 
-Neither arm gets Bash, so the no-MCP arm cannot reach the API out-of-band —
-the only variable is MCP tool access. Both arms work in the same clean git
-worktree (repo at HEAD minus dev/skill-evals, whose case asserts and fixture
-provenance would leak the answer) and observe the same frozen known-bad
-Airflow state prepared by ``mcp/prepare_fixture.py`` (all repeats read-only).
+Escape tools (Bash, subagents, web, writes) are explicitly denied in both
+arms — deny beats any ambient allowlist — so the no-MCP arm cannot reach the
+API out-of-band and the only variable is MCP tool access. Both arms work in
+the same clean snapshot (``git archive`` export at HEAD, no .git, minus
+dev/skill-evals whose case asserts would leak the answer) and observe the
+same frozen known-bad Airflow state prepared by ``mcp/prepare_fixture.py``.
 
 Prerequisites (see mcp/README section in README.md):
   1. breeze start-airflow            (Airflow API on :28080)
@@ -69,8 +70,6 @@ from eval import (  # noqa: E402
     PROMPTFOO_VERSION,
     REPO_ROOT,
     find_sdk_modules,
-    remove_worktree,
-    run,
 )
 from prepare_fixture import (  # noqa: E402
     CULPRIT_TASK_ID,
@@ -86,6 +85,12 @@ RESULTS_FILE = REPO_ROOT / "files" / "skill-evals" / "mcp-results.json"
 
 MCP_SERVER_NAME = "airflow-dev"
 MCP_URL = os.environ.get("AIRFLOW_MCP_URL", "http://localhost:28081/mcp")
+
+# Tools that would let an arm escape its isolation: Bash reaches the live
+# instance out-of-band (CLI, curl) and arbitrary git; subagents inherit and
+# multiply that surface; web tools could look up the original issue; write
+# tools could tamper with the snapshot.
+ESCAPE_TOOLS = ["Bash", "Task", "WebFetch", "WebSearch", "Write", "Edit", "NotebookEdit"]
 
 # Client-side belt-and-suspenders on top of the server's read-only mode: even
 # if the MCP server was started with writes enabled, the agent cannot mutate
@@ -145,27 +150,32 @@ def check_fixture_ready() -> None:
         sys.exit(1)
 
 
-def create_clean_worktree(work_dir: Path, worktrees: list[Path]) -> Path:
-    """Create the arm worktree: repo at HEAD, minus this eval's own files.
+def create_clean_snapshot(work_dir: Path) -> Path:
+    """Export the repo at HEAD into a plain directory: no .git, minus this eval's files.
 
     Both arms share it (they only read; the variable is tool access). The
-    dev/skill-evals tree is removed because the case asserts, the fixture
-    provenance, and this README would leak the expected answer to any arm
-    that can Grep the checkout. The deployed Dag is copied to files/dags/ —
-    the same path it occupies in the live Breeze instance.
+    dev/skill-evals tree is removed because the case asserts and the fixture
+    provenance would leak the expected answer to any arm that can search the
+    checkout. A `git archive` export (not a worktree) closes the second leak
+    found in practice: a worktree's .git link reaches the main repo's object
+    store, and an agent recovered the deleted answer files with
+    `git show HEAD:...`. The deployed Dag is copied to files/dags/ — the same
+    path it occupies in the live Breeze instance.
     """
-    wt_dir = work_dir / "arm"
-    result = run(["git", "-C", str(REPO_ROOT), "worktree", "add", "--quiet", "--detach", str(wt_dir), "HEAD"])
-    if result.returncode != 0:
-        print(f"Error: 'git worktree add' failed:\n{result.stderr.strip()}", file=sys.stderr)
+    arm_dir = work_dir / "arm"
+    arm_dir.mkdir()
+    archive = subprocess.Popen(["git", "-C", str(REPO_ROOT), "archive", "HEAD"], stdout=subprocess.PIPE)
+    extract = subprocess.run(["tar", "-x", "-C", str(arm_dir)], stdin=archive.stdout, check=False)
+    archive.wait()
+    if archive.returncode != 0 or extract.returncode != 0:
+        print("Error: exporting the repo snapshot (git archive | tar) failed.", file=sys.stderr)
         sys.exit(1)
-    worktrees.append(wt_dir)
 
-    shutil.rmtree(wt_dir / "dev" / "skill-evals", ignore_errors=True)
-    deployed_dags = wt_dir / "files" / "dags"
+    shutil.rmtree(arm_dir / "dev" / "skill-evals", ignore_errors=True)
+    deployed_dags = arm_dir / "files" / "dags"
     deployed_dags.mkdir(parents=True, exist_ok=True)
     shutil.copy2(FIXTURE_DAG, deployed_dags / FIXTURE_DAG.name)
-    return wt_dir
+    return arm_dir
 
 
 def build_arm_provider(label: str, model: str, max_turns: int, working_dir: Path, with_mcp: bool) -> dict:
@@ -176,11 +186,16 @@ def build_arm_provider(label: str, model: str, max_turns: int, working_dir: Path
         "working_dir": str(working_dir),
         "output_format": OUTPUT_FORMAT,
         "max_turns": max_turns,
+        # Explicit denies, not merely "not allowed": the developer's own
+        # settings.local.json allowlist leaks into the session and approved
+        # Bash in a past run, letting the no-MCP arm query the live instance
+        # via `breeze run airflow ...`. disallowed_tools wins over any allow.
+        "disallowed_tools": list(ESCAPE_TOOLS),
     }
     if with_mcp:
         config["mcp"] = {"servers": [{"name": MCP_SERVER_NAME, "url": MCP_URL}]}
         config["append_allowed_tools"] = [f"mcp__{MCP_SERVER_NAME}"]
-        config["disallowed_tools"] = MCP_WRITE_TOOLS
+        config["disallowed_tools"] = list(ESCAPE_TOOLS) + MCP_WRITE_TOOLS
     return {"id": "anthropic:claude-agent-sdk", "label": label, "config": config}
 
 
@@ -270,13 +285,11 @@ def main() -> int:
     check_mcp_endpoint_listening()
 
     work_dir = Path(tempfile.mkdtemp())
-    worktrees: list[Path] = []
     try:
         # promptfoo resolves the Claude Agent SDK from the config directory
         (work_dir / "node_modules").symlink_to(sdk_modules)
 
-        run(["git", "-C", str(REPO_ROOT), "worktree", "prune"])
-        arm_dir = create_clean_worktree(work_dir, worktrees)
+        arm_dir = create_clean_snapshot(work_dir)
 
         config = {
             "prompts": ["{{request}}"],
@@ -315,8 +328,6 @@ def main() -> int:
         return result.returncode
 
     finally:
-        for wt in worktrees:
-            remove_worktree(wt)
         shutil.rmtree(work_dir, ignore_errors=True)
 
 

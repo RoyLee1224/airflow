@@ -174,20 +174,30 @@ the `none_failed_min_one_success` trigger rule skipped before its
 mapped task group expands), prepared once per Breeze session and then
 only read.
 
-To keep the experiment honest, the arms work in a **clean snapshot**
-(a `git archive` export of HEAD — no `.git`, so deleted answer files
-cannot be recovered with `git show` — with `dev/skill-evals/` removed,
-because the case asserts and fixture provenance would leak the expected
-answer to any arm that can search the checkout). Escape tools (Bash,
-subagents, web access, writes) are **explicitly denied** in both arms:
-a plain "not allowed" is not enough, since the developer's own
-`settings.local.json` allowlist leaks into the session and once
-approved a `breeze run airflow ...` call from the no-MCP arm. The
-fixture uses deliberately **neutral names** (`media_asset_pipeline`,
-`frozen_debug_run` — no issue number a model could recognise from
-training data), and the deployed Dag sits at
+To keep the experiment honest, the arms work in a **clean snapshot**: a
+`git archive` export of HEAD. The repo's `.gitattributes` export-ignore
+rules strip all dev tooling from that archive — including
+`dev/skill-evals/` and with it this eval's case asserts (the answer
+key) — plus agent guidance files and `.git` itself (so deleted answer
+files cannot be recovered with `git show`, which an agent once did from
+a worktree-based arm). The harness asserts the answer key is absent and
+aborts if a `.gitattributes` change ever lets it back in. The **tool
+boundary is the allowlist** (read-only file tools, plus the MCP server
+in the with_mcp arm; everything else is denied headless) — the explicit
+escape-tool denies are defense-in-depth, learned when an ambient
+allowlist once approved a `breeze run airflow ...` call from the no-MCP
+arm. The fixture uses deliberately **neutral names**
+(`media_asset_pipeline`, `frozen_debug_run` — no issue number a model
+could recognise from training data), and the deployed Dag sits at
 `files/dags/media_asset_pipeline.py` in the snapshot, the same path it
 occupies in the live Breeze instance.
+
+**Known limitation:** the SDK's file tools are *not* confined to the
+snapshot directory — an agent that learned the host checkout path could
+read the real `dev/skill-evals/` by absolute path. The host path never
+appears in the arm's context, and a post-run tripwire scans every
+trajectory for reads that reached the real checkout, flagging the run
+as contaminated. Treat the tripwire as detection, not prevention.
 
 This suite is manual-only and independent of the AGENTS.md hash gate —
 it needs a live Airflow, so it never runs in CI and never touches
@@ -243,6 +253,10 @@ and tokens — and writes the full report to
 - **pass rate** — did runtime observation change *whether* the agent
   found the root cause?
 - **median turns / seconds** — did it shorten the *path* to it?
+- **max-turns** — how often an arm exhausted its budget. If the static
+  arm exhausts it in *every* repeat, the comparison partly measures an
+  under-budgeted arm rather than MCP usefulness — do a sensitivity run
+  at a higher `EVAL_MCP_MAX_TURNS` before drawing conclusions.
 
 A case passes when the structured diagnosis names the culprit task and
 the root cause mentions both the trigger rule and the pre-expansion

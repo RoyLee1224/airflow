@@ -27,12 +27,15 @@ access:
   (runtime observation of the live Breeze instance).
 - ``no_mcp``  — read-only file tools only (static reasoning over the repo).
 
-Escape tools (Bash, subagents, web, writes) are explicitly denied in both
-arms — deny beats any ambient allowlist — so the no-MCP arm cannot reach the
-API out-of-band and the only variable is MCP tool access. Both arms work in
-the same clean snapshot (``git archive`` export at HEAD, no .git, minus
-dev/skill-evals whose case asserts would leak the answer) and observe the
-same frozen known-bad Airflow state prepared by ``mcp/prepare_fixture.py``.
+The tool boundary is the allowlist (read-only file tools, plus the MCP
+server in the with_mcp arm); escape tools are additionally denied as
+defense-in-depth. Both arms work in the same snapshot: a ``git archive``
+export of HEAD, whose export-ignore rules strip all dev tooling — including
+this eval's own answer key — and .git itself; a guard asserts that stays
+true. Known limitation: the SDK's file tools are not confined to the
+snapshot directory, so a post-run tripwire scans trajectories for reads
+that reached the real checkout. Both arms observe the same frozen known-bad
+Airflow state prepared by ``mcp/prepare_fixture.py``.
 
 Prerequisites (see mcp/README section in README.md):
   1. breeze start-airflow            (Airflow API on :28080)
@@ -86,10 +89,13 @@ RESULTS_FILE = REPO_ROOT / "files" / "skill-evals" / "mcp-results.json"
 MCP_SERVER_NAME = "airflow-dev"
 MCP_URL = os.environ.get("AIRFLOW_MCP_URL", "http://localhost:28081/mcp")
 
-# Tools that would let an arm escape its isolation: Bash reaches the live
-# instance out-of-band (CLI, curl) and arbitrary git; subagents inherit and
-# multiply that surface; web tools could look up the original issue; write
-# tools could tamper with the snapshot.
+# Defense-in-depth, not the boundary. The actual boundary is the allowlist:
+# only the read-only file tools (plus the MCP server in the with_mcp arm)
+# are auto-approved, and headless runs deny every other tool request.
+# These explicit denies only matter if someone later broadens the allowlist
+# (append_allowed_tools/allow_all_tools) — do not rely on this list being
+# exhaustive. Bash in particular reached the live instance out-of-band via
+# the airflow CLI in an early worktree-based run.
 ESCAPE_TOOLS = ["Bash", "Task", "WebFetch", "WebSearch", "Write", "Edit", "NotebookEdit"]
 
 # Client-side belt-and-suspenders on top of the server's read-only mode: even
@@ -151,16 +157,17 @@ def check_fixture_ready() -> None:
 
 
 def create_clean_snapshot(work_dir: Path) -> Path:
-    """Export the repo at HEAD into a plain directory: no .git, minus this eval's files.
+    """Export the repo at HEAD into a plain directory snapshot for both arms.
 
-    Both arms share it (they only read; the variable is tool access). The
-    dev/skill-evals tree is removed because the case asserts and the fixture
-    provenance would leak the expected answer to any arm that can search the
-    checkout. A `git archive` export (not a worktree) closes the second leak
-    found in practice: a worktree's .git link reaches the main repo's object
-    store, and an agent recovered the deleted answer files with
-    `git show HEAD:...`. The deployed Dag is copied to files/dags/ — the same
-    path it occupies in the live Breeze instance.
+    `git archive` honors .gitattributes export-ignore, which strips all dev
+    tooling from the tree — including dev/skill-evals and with it this eval's
+    case asserts (the answer key) — plus agent guidance files and .git itself
+    (no `git show HEAD:` archaeology; an agent recovered deleted answer files
+    that way from an earlier worktree-based design). Both arms therefore see
+    the same source-distribution view of the repo. The guard below fails
+    loudly if a .gitattributes change ever lets the answer key back in.
+    The deployed Dag is copied to files/dags/ — the same path it occupies in
+    the live Breeze instance.
     """
     arm_dir = work_dir / "arm"
     arm_dir.mkdir()
@@ -171,7 +178,15 @@ def create_clean_snapshot(work_dir: Path) -> Path:
         print("Error: exporting the repo snapshot (git archive | tar) failed.", file=sys.stderr)
         sys.exit(1)
 
-    shutil.rmtree(arm_dir / "dev" / "skill-evals", ignore_errors=True)
+    if (arm_dir / "dev" / "skill-evals").exists():
+        print(
+            "Error: the snapshot contains dev/skill-evals — the eval's own case"
+            " asserts would leak the expected answer to the arms. Keep 'dev'"
+            " export-ignored in .gitattributes (or strip it here explicitly).",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
     deployed_dags = arm_dir / "files" / "dags"
     deployed_dags.mkdir(parents=True, exist_ok=True)
     shutil.copy2(FIXTURE_DAG, deployed_dags / FIXTURE_DAG.name)
@@ -182,14 +197,15 @@ def build_arm_provider(label: str, model: str, max_turns: int, working_dir: Path
     config: dict = {
         "model": model,
         "apiKeyRequired": False,
+        # working_dir is a bare temp snapshot with no .claude/ or CLAUDE.md
+        # above it, so "project" resolves to nothing: both arms run with
+        # identical (empty) ambient guidance, and the developer's own
+        # settings cannot leak in (they did once, via a worktree under the
+        # real repo, approving Bash from settings.local.json).
         "setting_sources": ["project"],
         "working_dir": str(working_dir),
         "output_format": OUTPUT_FORMAT,
         "max_turns": max_turns,
-        # Explicit denies, not merely "not allowed": the developer's own
-        # settings.local.json allowlist leaks into the session and approved
-        # Bash in a past run, letting the no-MCP arm query the live instance
-        # via `breeze run airflow ...`. disallowed_tools wins over any allow.
         "disallowed_tools": list(ESCAPE_TOOLS),
     }
     if with_mcp:
@@ -197,6 +213,32 @@ def build_arm_provider(label: str, model: str, max_turns: int, working_dir: Path
         config["append_allowed_tools"] = [f"mcp__{MCP_SERVER_NAME}"]
         config["disallowed_tools"] = list(ESCAPE_TOOLS) + MCP_WRITE_TOOLS
     return {"id": "anthropic:claude-agent-sdk", "label": label, "config": config}
+
+
+def find_isolation_breaches(results_file: Path) -> list[str]:
+    """Scan tool-call inputs for reads that reached outside the snapshot.
+
+    The SDK's read-only file tools are NOT confined to working_dir — an agent
+    that learns the host checkout path can read the real dev/skill-evals
+    (the answer key) by absolute path. The host path never appears in the
+    arm's context, so this is a tripwire, not a boundary: any hit means the
+    run is contaminated and its results must be discarded.
+    """
+    try:
+        results = json.loads(results_file.read_text())["results"]["results"]
+    except (OSError, KeyError, ValueError):
+        return []
+    breaches = []
+    for result in results:
+        label = (result.get("provider") or {}).get("label") or "?"
+        calls = ((result.get("response") or {}).get("metadata") or {}).get("toolCalls") or []
+        for call in calls:
+            if not isinstance(call, dict):
+                continue
+            rendered_input = json.dumps(call.get("input") or {})
+            if str(REPO_ROOT) in rendered_input or "skill-evals" in rendered_input:
+                breaches.append(f"{label}: {call.get('name')} {rendered_input[:120]}")
+    return breaches
 
 
 def count_infra_errors(results_file: Path) -> int:
@@ -318,6 +360,12 @@ def main() -> int:
         infra_errors = count_infra_errors(RESULTS_FILE)
         if infra_errors:
             print(f"\n{infra_errors} provider error(s) — check the MCP server and auth setup.")
+
+        breaches = find_isolation_breaches(RESULTS_FILE)
+        if breaches:
+            print("\nISOLATION BREACH — an arm reached outside its snapshot; discard this run:")
+            for breach in breaches:
+                print(f"  {breach}")
 
         summarize_results(RESULTS_FILE)
         print(f"Results report: {RESULTS_FILE.relative_to(REPO_ROOT)}")

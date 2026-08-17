@@ -27,14 +27,16 @@ real repo — the agent sees actual source files.
 Usage:
     prek run run-skill-eval --hook-stage manual --all-files
     prek run run-skill-eval-codex --hook-stage manual --all-files
+    MODEL=provider/model-id prek run run-skill-eval-opencode --hook-stage manual --all-files
 
-Env knobs: AGENT_RUNTIME (set by the Codex hook), MODEL, SKILL_NAME, EVAL_REPEAT,
-EVAL_FULL (baseline arm).
+Env knobs: AGENT_RUNTIME (set by alternate-runtime hooks), MODEL, SKILL_NAME,
+EVAL_REPEAT, EVAL_FULL (baseline arm).
 Promptfoo flags like --filter* are argv-only — wire them as fixed entry
 args on a hook variant when needed.
 
 Authentication: Claude Code session (claude /login), ANTHROPIC_API_KEY,
-or a Codex CLI session (codex login), depending on the selected runtime.
+a Codex CLI session (codex login), or an OpenCode session (opencode auth login),
+depending on the selected runtime.
 """
 
 from __future__ import annotations
@@ -51,13 +53,24 @@ PROMPTFOO_VERSION = "0.121.17"
 SDK_PACKAGES = {
     "claude": "@anthropic-ai/claude-agent-sdk",
     "codex": "@openai/codex-sdk",
+    "opencode": "@opencode-ai/sdk",
 }
 SUPPORTED_RUNTIMES = tuple(SDK_PACKAGES)
+RUNTIME_HOOKS = {
+    "claude": "run-skill-eval",
+    "codex": "run-skill-eval-codex",
+    "opencode": "run-skill-eval-opencode",
+}
 
 # Codex prefix-truncates project docs past project_doc_max_bytes, and the 32,768-byte
 # default is already smaller than AGENTS.md — guidance appended at the end would be
 # invisible to every arm while the eval still recorded a hash as proof it ran.
 CODEX_PROJECT_DOC_MAX_BYTES = 1_048_576
+OPENCODE_OUTPUT_INSTRUCTION = (
+    "Return only one valid JSON object, with no markdown or surrounding prose. "
+    "It must contain exactly these fields: should_create (boolean), type "
+    "(one of bugfix, feature, improvement, doc, misc, significant), and rationale (string)."
+)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -126,7 +139,7 @@ def find_sdk_modules(runtime: str) -> Path:
             install_root = pf_pkg.parent
             if install_root.joinpath(*sdk_package.split("/"), "package.json").is_file():
                 return install_root
-    hook = "run-skill-eval-codex" if runtime == "codex" else "run-skill-eval"
+    hook = RUNTIME_HOOKS[runtime]
     print(
         f"Error: promptfoo {PROMPTFOO_VERSION} with {sdk_package} not found. Run the eval via:\n"
         f"  prek run {hook} --hook-stage manual --all-files",
@@ -271,6 +284,54 @@ def build_codex_provider(
     }
 
 
+def build_opencode_provider(
+    label: str, working_dir: Path, model: str, detect_skill_usage: bool = False
+) -> dict:
+    provider_id, _, model_id = model.partition("/")
+    tools = {
+        "bash": False,
+        "edit": False,
+        "glob": True,
+        "grep": True,
+        "list": True,
+        "lsp": False,
+        "patch": False,
+        "question": False,
+        "read": True,
+        "skill": detect_skill_usage,
+        "todowrite": False,
+        "todoread": False,
+        "webfetch": False,
+        "write": False,
+    }
+    return {
+        "id": "opencode:sdk",
+        "label": label,
+        "config": {
+            "apiKeyRequired": False,
+            "custom_agent": {
+                "description": "Read-only Airflow skill-eval agent",
+                "mode": "primary",
+                "prompt": OPENCODE_OUTPUT_INSTRUCTION,
+            },
+            "format": OUTPUT_FORMAT,
+            "model": model_id,
+            "permission": {
+                "*": "deny",
+                "glob": "allow",
+                "grep": "allow",
+                "list": "allow",
+                "read": "allow",
+                "skill": "allow" if detect_skill_usage else "deny",
+            },
+            "provider_id": provider_id,
+            "tools": tools,
+            "working_dir": str(working_dir),
+        },
+        "transform": "JSON.parse(output)",
+    }
+
+
 def get_runtime() -> str:
     runtime = os.environ.get("AGENT_RUNTIME", "claude").lower()
     if runtime not in SUPPORTED_RUNTIMES:
@@ -279,13 +340,34 @@ def get_runtime() -> str:
     return runtime
 
 
+def validate_model(runtime: str, model: str | None) -> str | None:
+    if runtime != "opencode":
+        return model
+    if not model or model.startswith("/") or model.endswith("/") or "/" not in model:
+        raise ValueError(
+            "the OpenCode runtime requires MODEL in provider/model-id format (for example, openai/gpt-5.4)"
+        )
+    return model
+
+
+def build_prompt(runtime: str) -> str:
+    prompt = "{{request}}"
+    if runtime == "opencode":
+        prompt += f"\n\n{OPENCODE_OUTPUT_INSTRUCTION}"
+    return prompt
+
+
 def count_provider_errors(results_file: Path) -> int:
     """Count results whose provider call errored (as opposed to failing an assertion)."""
     try:
         results = json.loads(results_file.read_text())["results"]["results"]
     except (OSError, KeyError, ValueError):
         return 0
-    return sum(1 for r in results if (r.get("response") or {}).get("error"))
+    return sum(
+        1
+        for result in results
+        if (result.get("response") or {}).get("error") or result.get("failureReason") == 2
+    )
 
 
 def main() -> int:
@@ -299,6 +381,11 @@ def main() -> int:
     model = os.environ.get("MODEL")
     if not model and runtime == "claude":
         model = "claude-sonnet-4-6"
+    try:
+        model = validate_model(runtime, model)
+    except ValueError as error:
+        print(f"Error: {error}", file=sys.stderr)
+        return 1
     skill_name = os.environ.get("SKILL_NAME")
     skill_src = None
     if skill_name:
@@ -318,6 +405,11 @@ def main() -> int:
             print(f"Error: EVAL_REPEAT must be a positive integer, got {repeat!r}", file=sys.stderr)
             return 1
         promptfoo_args += ["--repeat", repeat]
+    if runtime == "opencode" and not any(arg.startswith("--max-concurrency") for arg in promptfoo_args):
+        # Concurrent SDK calls can race while starting OpenCode servers against
+        # the same local SQLite store. Serial execution also makes arm ordering
+        # reproducible and still gives each prompt a fresh session.
+        promptfoo_args += ["--max-concurrency", "1"]
 
     if full_mode and skill_name:
         print(
@@ -341,6 +433,8 @@ def main() -> int:
     try:
         # promptfoo resolves the selected agent SDK from the config directory
         (work_dir / "node_modules").symlink_to(sdk_modules)
+        if runtime == "opencode":
+            (work_dir / "opencode-config").mkdir()
 
         # Extract main-branch AGENTS.md
         main_agents = work_dir / "main-agents.md"
@@ -388,6 +482,10 @@ def main() -> int:
         def provider(label: str, arm: Path, selected_skill: str | None = None) -> dict:
             if runtime == "codex":
                 return build_codex_provider(label, arm, model, detect_skill_usage=bool(selected_skill))
+            if runtime == "opencode":
+                if model is None:  # Guarded by validate_model() before any arm is created.
+                    raise RuntimeError("OpenCode model was not validated")
+                return build_opencode_provider(label, arm, model, detect_skill_usage=bool(selected_skill))
             return build_provider(label, arm, model, selected_skill)
 
         providers = [provider("main", arm_main, skill_name)]
@@ -401,7 +499,7 @@ def main() -> int:
             default_test["assert"] = [{"type": "skill-used", "value": skill_name}]
 
         config = {
-            "prompts": ["{{request}}"],
+            "prompts": [build_prompt(runtime)],
             "providers": providers,
             "defaultTest": default_test,
             "tests": f"file://{SCRIPT_DIR}/cases/*.yaml",
@@ -428,10 +526,15 @@ def main() -> int:
         # Run promptfoo — state under .build, per-run report under files/
         PROMPTFOO_STATE_DIR.mkdir(parents=True, exist_ok=True)
         RESULTS_FILE.parent.mkdir(parents=True, exist_ok=True)
+        promptfoo_env = {**os.environ, "PROMPTFOO_CONFIG_DIR": str(PROMPTFOO_STATE_DIR)}
+        if runtime == "opencode":
+            # Keep machine-wide OpenCode instructions/plugins out of the sealed arms.
+            # Authentication is stored separately and remains available.
+            promptfoo_env["XDG_CONFIG_HOME"] = str(work_dir / "opencode-config")
         result = subprocess.run(
             ["promptfoo", "eval", "-c", str(config_path), "--output", str(RESULTS_FILE), *promptfoo_args],
             check=False,
-            env={**os.environ, "PROMPTFOO_CONFIG_DIR": str(PROMPTFOO_STATE_DIR)},
+            env=promptfoo_env,
         )
 
         # 0 = all passed, 100 = some assertions failed — both mean the eval

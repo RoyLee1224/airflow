@@ -1056,6 +1056,25 @@ repos:
         pass_filenames: false
         require_serial: true
         verbose: true
+      - id: run-skill-eval-opencode
+        name: Run skill-eval against AGENTS.md and cases (OpenCode runtime)
+        # Kept separate so contributors only install the OpenCode SDK and CLI
+        # when they opt in to this runtime.
+        entry: env AGENT_RUNTIME=opencode ./dev/skill-evals/eval.py
+        language: node
+        language_version: '22.22.0'
+        additional_dependencies:
+          - 'promptfoo@0.121.17'
+          - '@opencode-ai/sdk@1.18.18'
+          - 'opencode-ai@1.18.18'
+        stages: ['manual']
+        files: >
+          (?x)
+          ^AGENTS\.md$|
+          ^dev/skill-evals/
+        pass_filenames: false
+        require_serial: true
+        verbose: true
       - id: view-skill-eval
         name: View skill-eval results in browser (manual)
         entry: env PROMPTFOO_CONFIG_DIR=.build/promptfoo promptfoo view

@@ -54,22 +54,37 @@ regular-file CLAUDE.md would make every arm read identical guidance.
   - `ANTHROPIC_API_KEY` environment variable — API credits
 - **Codex authentication** (when using the Codex runtime): a Codex CLI
   session (`codex login`)
+- **OpenCode setup** (when using the OpenCode runtime): authentication required
+  by the selected provider (for example, `opencode auth login`) and an explicit
+  `MODEL` in `provider/model-id` format
 
 That's it — prek provisions Node, promptfoo, and the agent SDKs automatically.
 
 ## Agent runtimes
 
-Claude is the default runtime. The `run-skill-eval-codex` hook runs the same
-arms and cases through the official Codex SDK instead. The Codex provider uses
-a fresh thread for every prompt, read-only sandboxing, disabled network access,
-disabled session-history persistence, and the SDK's structured-output support.
+Claude is the default runtime. The `run-skill-eval-codex` and
+`run-skill-eval-opencode` hooks run the same arms and cases through the official
+Codex and OpenCode SDKs. The Codex provider uses a fresh thread for every
+prompt, read-only sandboxing, disabled network access, disabled session-history
+persistence, and the SDK's structured-output support.
 
-The two runtimes are separate hooks, not one hook with a flag, because the
-Codex env carries a ~300 MB Codex CLI binary. Keeping it separate means prek
-only builds that env for contributors who actually run the Codex arm. promptfoo
-bundles its own older `@openai/codex-sdk`, but that build ships a binary whose
-Developer ID certificate Apple has revoked — macOS kills it on exec and reports
-it as malware — so the Codex hook installs a notarized version explicitly.
+The OpenCode provider starts a local OpenCode server through the V2 SDK, creates
+a fresh session for every prompt, allows only read, grep, glob, and list tools
+(plus skill when `SKILL_NAME` is set), and requests schema-constrained output. A
+JSON-only system instruction is also applied because some providers ignore
+native JSON-schema requests. OpenCode cases run serially so concurrent local
+servers do not contend for OpenCode's SQLite store. The harness also uses an
+empty temporary `XDG_CONFIG_HOME`, so global instructions, plugins, and model
+defaults cannot leak into sealed arms. Authentication remains available because
+OpenCode stores it separately. Consequently, OpenCode runs require an explicit
+`MODEL=provider/model-id`.
+
+The runtimes are separate hooks, not one hook with a flag, because each SDK and
+CLI is sizeable. Keeping them separate means prek only builds an alternate
+runtime environment for contributors who actually run it. promptfoo bundles
+its own older `@openai/codex-sdk`, but that build ships a binary whose Developer
+ID certificate Apple has revoked — macOS kills it on exec and reports it as
+malware — so the Codex hook installs a notarized version explicitly.
 
 Codex caps the project docs it reads at `project_doc_max_bytes` and truncates
 past it, and the 32,768-byte default is smaller than `AGENTS.md`. The harness
@@ -77,10 +92,10 @@ raises that cap so the whole file reaches the model — otherwise guidance
 appended at the end would be invisible to every arm and the eval would compare
 identical prefixes.
 
-When `SKILL_NAME` is set, both runtimes verify skill usage with promptfoo's
-`skill-used` assertion. The Codex SDK does not expose a first-class skill-use
-event, so promptfoo infers usage from successful reads of the skill's
-`SKILL.md` file.
+When `SKILL_NAME` is set, all runtimes verify skill usage with promptfoo's
+`skill-used` assertion. OpenCode reports its `skill` tool calls directly. The
+Codex SDK does not expose a first-class skill-use event, so promptfoo infers
+usage from successful reads of the skill's `SKILL.md` file.
 
 ```bash
 # Default: Claude Agent SDK
@@ -91,6 +106,9 @@ prek run run-skill-eval-codex --hook-stage manual --all-files
 
 # Codex SDK with an explicit model
 MODEL=gpt-5.4 prek run run-skill-eval-codex --hook-stage manual --all-files
+
+# OpenCode SDK (provider name follows `opencode models` output)
+MODEL=openai/gpt-5.4 prek run run-skill-eval-opencode --hook-stage manual --all-files
 ```
 
 ## Usage
@@ -165,8 +183,10 @@ Use `output.should_create` directly in assertions.
 2. Generates a [promptfoo](https://github.com/promptfoo/promptfoo)
    config for the selected runtime. Claude uses promptfoo's
    `anthropic:claude-agent-sdk` provider; Codex uses its `openai:codex-sdk`
-   provider. Both request schema-constrained structured output.
-3. Runs each case against all arms in parallel.
+   provider; OpenCode uses promptfoo's `opencode:sdk` provider over the official
+   V2 SDK. All request schema-constrained structured output.
+3. Runs each case against all arms (in parallel, except for the serialized
+   OpenCode runtime).
 4. Reports pass/fail diff. Worktrees cleaned up on exit.
 
 ## Eval-run hash gate

@@ -73,10 +73,17 @@ a fresh session for every prompt, allows only read, grep, glob, and list tools
 (plus skill when `SKILL_NAME` is set), and requests schema-constrained output. A
 JSON-only system instruction is also applied because some providers ignore
 native JSON-schema requests. OpenCode cases run serially so concurrent local
-servers do not contend for OpenCode's SQLite store. The harness also uses an
-empty temporary `XDG_CONFIG_HOME`, so global instructions, plugins, and model
-defaults cannot leak into sealed arms. Authentication remains available because
-OpenCode stores it separately. Consequently, OpenCode runs require an explicit
+servers do not contend for the run's SQLite store.
+
+OpenCode's config, data, cache, and state directories are redirected to the
+temporary run directory. Ambient custom config variables, global Claude
+instructions, external skills, and external plugins are disabled, and each arm's
+project `.opencode` directory is rebuilt from scratch. Existing credentials are
+read before the redirect and passed to OpenCode through `OPENCODE_AUTH_CONTENT`;
+provider API-key environment variables remain available too. When `SKILL_NAME`
+is set, the selected `.agents` skill is also mirrored into OpenCode's native
+`.opencode/skills` path so the eval does not depend on its compatibility-path
+discovery. Consequently, OpenCode runs require an explicit
 `MODEL=provider/model-id`.
 
 The runtimes are separate hooks, not one hook with a flag, because each SDK and
@@ -148,8 +155,10 @@ a PR.
 
 ## Cleanup
 
-Everything the harness stores lives inside the repo — nothing is left
-in your home directory:
+Persistent eval state lives inside the repo, while worktrees and isolated
+OpenCode state use a temporary directory that is deleted after the run. The
+harness does not write OpenCode sessions, logs, or caches into your home
+directory:
 
 ```bash
 rm -rf .build/promptfoo   # eval history and cache

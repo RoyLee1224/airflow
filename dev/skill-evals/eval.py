@@ -71,6 +71,14 @@ OPENCODE_OUTPUT_INSTRUCTION = (
     "It must contain exactly these fields: should_create (boolean), type "
     "(one of bugfix, feature, improvement, doc, misc, significant), and rationale (string)."
 )
+OPENCODE_AMBIENT_ENV_VARS = (
+    "OPENCODE_AUTH_CONTENT",
+    "OPENCODE_CONFIG",
+    "OPENCODE_CONFIG_CONTENT",
+    "OPENCODE_CONFIG_DIR",
+    "OPENCODE_DISABLE_PROJECT_CONFIG",
+    "OPENCODE_TEST_HOME",
+)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -196,6 +204,7 @@ def create_worktree(
     worktrees: list[Path],
     skill_name: str | None = None,
     skill_file: Path | None = None,
+    runtime: str = "claude",
 ) -> Path:
     """Create a git worktree arm with the specified AGENTS.md and optional SKILL.md."""
     wt_dir = work_dir / name
@@ -222,6 +231,12 @@ def create_worktree(
     # even if a later step in this function fails.
     worktrees.append(wt_dir)
 
+    if runtime == "opencode":
+        # The harness supplies all OpenCode configuration itself. Drop project
+        # config, plugins, and unrelated native skills so they cannot become
+        # hidden differences between otherwise sealed arms.
+        shutil.rmtree(wt_dir / ".opencode", ignore_errors=True)
+
     if agents_file is None:
         # Baseline arm: remove all guidance. CLAUDE.md is a symlink to
         # AGENTS.md — drop it too so the SDK finds no dangling link.
@@ -231,9 +246,16 @@ def create_worktree(
         shutil.copy2(agents_file, wt_dir / "AGENTS.md")
 
     if skill_name and skill_file:
-        skill_dir = wt_dir / ".agents" / "skills" / skill_name
-        skill_dir.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(skill_file, skill_dir / "SKILL.md")
+        skill_roots = [wt_dir / ".agents" / "skills"]
+        if runtime == "opencode":
+            # OpenCode 1.18.x has a regression in .agents skill discovery.
+            # Its native project path is reliable and keeps skill-used evals
+            # independent of that compatibility layer.
+            skill_roots.append(wt_dir / ".opencode" / "skills")
+        for skill_root in skill_roots:
+            skill_dir = skill_root / skill_name
+            skill_dir.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(skill_file, skill_dir / "SKILL.md")
 
     return wt_dir
 
@@ -357,6 +379,53 @@ def build_prompt(runtime: str) -> str:
     return prompt
 
 
+def read_opencode_auth_content(env: dict[str, str]) -> str | None:
+    """Read OpenCode credentials before redirecting its data directory."""
+    if auth_content := env.get("OPENCODE_AUTH_CONTENT"):
+        return auth_content
+    data_home = Path(env.get("XDG_DATA_HOME") or Path.home() / ".local" / "share")
+    try:
+        return (data_home / "opencode" / "auth.json").read_text()
+    except OSError:
+        return None
+
+
+def build_promptfoo_env(runtime: str, work_dir: Path) -> dict[str, str]:
+    """Build a provider environment without leaking machine-wide OpenCode state."""
+    env = {**os.environ, "PROMPTFOO_CONFIG_DIR": str(PROMPTFOO_STATE_DIR)}
+    if runtime != "opencode":
+        return env
+
+    auth_content = read_opencode_auth_content(env)
+    for variable in OPENCODE_AMBIENT_ENV_VARS:
+        env.pop(variable, None)
+
+    xdg_dirs = {}
+    for kind in ("config", "data", "cache", "state"):
+        directory = work_dir / f"opencode-{kind}"
+        directory.mkdir(exist_ok=True)
+        xdg_dirs[f"XDG_{kind.upper()}_HOME"] = str(directory)
+
+    env.update(
+        {
+            **xdg_dirs,
+            # A global ~/.claude/CLAUDE.md is outside XDG_CONFIG_HOME and is
+            # otherwise loaded alongside the project AGENTS.md.
+            "OPENCODE_DISABLE_CLAUDE_CODE_PROMPT": "1",
+            # Skills under ~/.claude and ~/.agents are also outside XDG. The
+            # selected project skill is mirrored into .opencode/skills.
+            "OPENCODE_DISABLE_EXTERNAL_SKILLS": "1",
+            # Do not load ambient external plugins from the contributor's home.
+            "OPENCODE_PURE": "1",
+        }
+    )
+    if auth_content:
+        # OpenCode supports credentials through this environment variable, so
+        # its SQLite/log/cache directories can remain fully ephemeral.
+        env["OPENCODE_AUTH_CONTENT"] = auth_content
+    return env
+
+
 def count_provider_errors(results_file: Path) -> int:
     """Count results whose provider call errored (as opposed to failing an assertion)."""
     try:
@@ -433,9 +502,6 @@ def main() -> int:
     try:
         # promptfoo resolves the selected agent SDK from the config directory
         (work_dir / "node_modules").symlink_to(sdk_modules)
-        if runtime == "opencode":
-            (work_dir / "opencode-config").mkdir()
-
         # Extract main-branch AGENTS.md
         main_agents = work_dir / "main-agents.md"
         if not git_show_file(base_branch, "AGENTS.md", main_agents):
@@ -463,20 +529,36 @@ def main() -> int:
         run(["git", "-C", str(REPO_ROOT), "worktree", "prune"])
 
         arm_main = create_worktree(
-            work_dir, "main", base_branch, main_agents, worktrees, skill_name, main_skill
+            work_dir,
+            "main",
+            base_branch,
+            main_agents,
+            worktrees,
+            skill_name=skill_name,
+            skill_file=main_skill,
+            runtime=runtime,
         )
 
         arm_working = None
         if need_working:
             arm_working = create_worktree(
-                work_dir, "working", base_branch, AGENTS_SRC, worktrees, skill_name, skill_src
+                work_dir,
+                "working",
+                base_branch,
+                AGENTS_SRC,
+                worktrees,
+                skill_name=skill_name,
+                skill_file=skill_src,
+                runtime=runtime,
             )
         else:
             print("  AGENTS.md unchanged — skipping working arm")
 
         arm_baseline = None
         if full_mode:
-            arm_baseline = create_worktree(work_dir, "baseline", base_branch, None, worktrees)
+            arm_baseline = create_worktree(
+                work_dir, "baseline", base_branch, None, worktrees, runtime=runtime
+            )
 
         # Generate config (JSON — valid promptfoo config, keeps the script stdlib-only)
         def provider(label: str, arm: Path, selected_skill: str | None = None) -> dict:
@@ -526,11 +608,7 @@ def main() -> int:
         # Run promptfoo — state under .build, per-run report under files/
         PROMPTFOO_STATE_DIR.mkdir(parents=True, exist_ok=True)
         RESULTS_FILE.parent.mkdir(parents=True, exist_ok=True)
-        promptfoo_env = {**os.environ, "PROMPTFOO_CONFIG_DIR": str(PROMPTFOO_STATE_DIR)}
-        if runtime == "opencode":
-            # Keep machine-wide OpenCode instructions/plugins out of the sealed arms.
-            # Authentication is stored separately and remains available.
-            promptfoo_env["XDG_CONFIG_HOME"] = str(work_dir / "opencode-config")
+        promptfoo_env = build_promptfoo_env(runtime, work_dir)
         result = subprocess.run(
             ["promptfoo", "eval", "-c", str(config_path), "--output", str(RESULTS_FILE), *promptfoo_args],
             check=False,

@@ -190,6 +190,88 @@ def test_build_prompt_repeats_output_contract_for_opencode(skill_eval_module):
     assert skill_eval_module.build_prompt("claude") == "{{request}}"
 
 
+def test_create_worktree_mirrors_skill_to_native_opencode_path(monkeypatch, skill_eval_module, tmp_path):
+    work_dir = tmp_path / "eval"
+    worktree = work_dir / "main"
+    stale_opencode_file = worktree / ".opencode" / "plugins" / "ambient.ts"
+    stale_opencode_file.parent.mkdir(parents=True)
+    stale_opencode_file.write_text("ambient plugin")
+    agents_file = tmp_path / "AGENTS.md"
+    agents_file.write_text("project guidance")
+    skill_file = tmp_path / "SKILL.md"
+    skill_file.write_text("---\nname: test-skill\ndescription: test\n---\n")
+    monkeypatch.setattr(
+        skill_eval_module,
+        "run",
+        lambda *args, **kwargs: SimpleNamespace(returncode=0, stderr=""),
+    )
+    worktrees = []
+
+    result = skill_eval_module.create_worktree(
+        work_dir,
+        "main",
+        "main",
+        agents_file,
+        worktrees,
+        skill_name="test-skill",
+        skill_file=skill_file,
+        runtime="opencode",
+    )
+
+    assert result == worktree
+    assert worktrees == [worktree]
+    assert not stale_opencode_file.exists()
+    assert (worktree / ".agents" / "skills" / "test-skill" / "SKILL.md").read_text() == (
+        skill_file.read_text()
+    )
+    assert (worktree / ".opencode" / "skills" / "test-skill" / "SKILL.md").read_text() == (
+        skill_file.read_text()
+    )
+
+
+def test_build_promptfoo_env_seals_opencode_state_and_preserves_auth(
+    monkeypatch, skill_eval_module, tmp_path
+):
+    source_data_home = tmp_path / "user-data"
+    auth_file = source_data_home / "opencode" / "auth.json"
+    auth_file.parent.mkdir(parents=True)
+    auth_file.write_text('{"openai":{"type":"api","key":"secret"}}')
+    monkeypatch.setenv("XDG_DATA_HOME", str(source_data_home))
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "still-available")
+    monkeypatch.delenv("OPENCODE_AUTH_CONTENT", raising=False)
+    for variable in (
+        "OPENCODE_CONFIG",
+        "OPENCODE_CONFIG_CONTENT",
+        "OPENCODE_CONFIG_DIR",
+        "OPENCODE_DISABLE_PROJECT_CONFIG",
+        "OPENCODE_TEST_HOME",
+    ):
+        monkeypatch.setenv(variable, "ambient-value")
+    work_dir = tmp_path / "run"
+    work_dir.mkdir()
+
+    env = skill_eval_module.build_promptfoo_env("opencode", work_dir)
+
+    assert env["ANTHROPIC_API_KEY"] == "still-available"
+    assert env["OPENCODE_AUTH_CONTENT"] == auth_file.read_text()
+    assert env["OPENCODE_DISABLE_CLAUDE_CODE_PROMPT"] == "1"
+    assert env["OPENCODE_DISABLE_EXTERNAL_SKILLS"] == "1"
+    assert env["OPENCODE_PURE"] == "1"
+    assert env["PROMPTFOO_CONFIG_DIR"] == str(skill_eval_module.PROMPTFOO_STATE_DIR)
+    for kind in ("config", "data", "cache", "state"):
+        isolated_dir = work_dir / f"opencode-{kind}"
+        assert env[f"XDG_{kind.upper()}_HOME"] == str(isolated_dir)
+        assert isolated_dir.is_dir()
+    for variable in (
+        "OPENCODE_CONFIG",
+        "OPENCODE_CONFIG_CONTENT",
+        "OPENCODE_CONFIG_DIR",
+        "OPENCODE_DISABLE_PROJECT_CONFIG",
+        "OPENCODE_TEST_HOME",
+    ):
+        assert variable not in env
+
+
 def test_count_provider_errors_includes_transform_errors(skill_eval_module, tmp_path):
     results_file = tmp_path / "results.json"
     results_file.write_text(
